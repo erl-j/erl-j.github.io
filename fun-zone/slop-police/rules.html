@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>Slop detector rules</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="notice" role="note"><strong>This measures style, not authorship.</strong> Humans write slop and models can avoid it. Do not use it to make decisions about people (grading, hiring, misconduct).</div>
+<main class="rules">
+<p><a href="index.html">&larr; Back to the detector</a></p>
+<h1>The rule set</h1>
+<p>91 features: the 87 in the scored model and 4 artefact-variant features that are defined but not scored. Each feature is code written by hand (regexes, word lists, counts); a logistic regression learned on the v2 training split weights them. A positive weight means a higher value pushes the score toward AI style. Features are sorted by |weight| within each family. Model <code>slop_lr</code>, export sha256 <code>c32b8dc271b5</code>, built from commit <code>ac9dd98</code>.</p>
+<p>The direction observed on our training data often disagrees with the folk tell: those rows say "reversed" in their rationale.</p>
+<nav class="toc"><a href="#fam-constructions">constructions</a> · <a href="#fam-dramatic_beats">dramatic beats</a> · <a href="#fam-global_statistics">global statistics</a> · <a href="#fam-grammar">grammar</a> · <a href="#fam-hedging_filler">hedging filler</a> · <a href="#fam-lexical">lexical</a> · <a href="#fam-mined">mined</a> · <a href="#fam-punctuation">punctuation</a> · <a href="#fam-statistics">statistics</a> · <a href="#fam-structure">structure</a> · <a href="#sources">sources</a></nav>
+<section><h2 id="fam-constructions">constructions (4)</h2>
+<article class="rule" id="constructions.not_x_its_y_xsent">
+<h3>&#x27;It isn&#x27;t X. It&#x27;s Y.&#x27; <code>constructions.not_x_its_y_xsent</code></h3>
+<p>Antithesis across two sentences (ports of Paech&#x27;s slop-score patterns). The single-sentence &#x27;not X but Y&#x27; is null on v2 train; this form survives the antitell prompt&#x27;s ban: AUC .57 on antitell (13% of AI vs 4% of human texts overall), null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-SS">PAECH-SS</a>; <a href="#src-WP">WP</a>; <a href="#src-SLHCK">SLHCK</a>; <a href="#src-GRAPHITE">GRAPHITE</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.159</dd>
+</dl></article>
+<article class="rule" id="constructions.rather_than">
+<h3>&#x27;rather than&#x27; <code>constructions.rather_than</code></h3>
+<p>&#x27;rather than&#x27; per 1000 words, a contrastive framing models favour. AI more: AUC .56 overall (fires in 16% of AI vs 4% of human texts), .59 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.142</dd>
+</dl></article>
+<article class="rule" id="constructions.formula_phrases">
+<h3>Formula phrases (&#x27;when it comes to&#x27;, &#x27;plays a role&#x27;) <code>constructions.formula_phrases</code></h3>
+<p>Russell et al.&#x27;s formula phrases plus &#x27;plays a (X) role&#x27; and &#x27;a testament to&#x27;. AI more on natural (AUC .58), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Russell2025experts">Russell2025experts</a>; <a href="#src-Kobak2025">Kobak2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.052</dd>
+</dl></article>
+<article class="rule" id="constructions.rule_of_three">
+<h3>Rule of three (&#x27;fast, cheap, and reliable&#x27;) <code>constructions.rule_of_three</code></h3>
+<p>Lists of exactly three short items (&#x27;X, Y, and Z&#x27;), not part of a longer list. AI reaches for triads: AUC .58 overall, .65 natural, null on antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-9">PANGRAM-9</a>; <a href="#src-WP">WP</a>; <a href="#src-A16Z">A16Z</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.041</dd>
+</dl></article></section><section><h2 id="fam-dramatic_beats">dramatic beats (3)</h2>
+<article class="rule" id="dramatic_beats.one_line_para">
+<h3>One-line paragraphs <code>dramatic_beats.one_line_para</code></h3>
+<p>Share of paragraphs (after the first; headings and list items left out) that are a single sentence of &lt;= 12 words. Predicted as an AI emphasis move; reversed on v2 train: humans write more of them, AUC .63 overall (human &gt; AI), on every slice; .64 without the flagged Wikipedia slice.</p>
+<dl>
+<dt>Source</dt><dd>SPEC; <a href="#src-A16Z">A16Z</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>share of paragraphs</dd>
+<dt>Highlights</dt><dd>units: the one-line paragraphs</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.213</dd>
+</dl></article>
+<article class="rule" id="dramatic_beats.restatement_ending">
+<h3>Ending restates the opening <code>dramatic_beats.restatement_ending</code></h3>
+<p>Overlap (Jaccard of content-word stems) between the first and the last paragraph. The essay habit of closing on the opening&#x27;s words: AI higher, AUC .63 overall, .57 natural, .68 antitell. Texts with &gt;= 3 paragraphs.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a>; <a href="#src-A16Z">A16Z</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>Jaccard</dd>
+<dt>Highlights</dt><dd>hits: shared words in the first and last paragraph</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.175</dd>
+</dl></article>
+<article class="rule" id="dramatic_beats.short_after_long">
+<h3>Short sentence after a long one <code>dramatic_beats.short_after_long</code></h3>
+<p>Sentences of &lt;= 6 words right after one of &gt;= 25 words, per 100 transitions. Predicted AI; reversed on the natural slices (AUC .60, human &gt; AI), null overall.</p>
+<dl>
+<dt>Source</dt><dd>SPEC; <a href="#src-A16Z">A16Z</a>; <a href="#src-MunozOrtiz2024">MunozOrtiz2024 (contra)</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 100 transitions</dd>
+<dt>Highlights</dt><dd>hits: the short sentences</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.037</dd>
+</dl></article></section><section><h2 id="fam-global_statistics">global statistics (5)</h2>
+<article class="rule" id="global_statistics.sentence_overlap">
+<h3>Adjacent sentences share words <code>global_statistics.sentence_overlap</code></h3>
+<p>Mean Jaccard overlap of content words between neighbouring sentences. Predicted higher in AI; reversed on v2 train: humans carry words from one sentence to the next more (topic chaining), AUC .73 overall (human &gt; AI), .75 natural, .73 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-FrohlingZubiaga2021">FrohlingZubiaga2021</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>Jaccard</dd>
+<dt>Highlights</dt><dd>hits: content words repeated from the previous sentence</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.351</dd>
+</dl></article>
+<article class="rule" id="global_statistics.punct_diversity">
+<h3>Punctuation variety <code>global_statistics.punct_diversity</code></h3>
+<p>Entropy of the punctuation profile over 13 marks (comma, period, colon, semicolon, ! ? dashes, hyphen, parentheses, quotes, ellipsis). Humans use a wider mix of marks; AI leans on commas and periods. On v2 train AI is lower: AUC .65 overall, .75 antitell, null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; <a href="#src-ECON">ECON</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-Przystalski2025">Przystalski2025</a></dd>
+<dt>Evidence type</dt><dd>community</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>bits</dd>
+<dt>Highlights</dt><dd>units: every punctuation mark counted</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.309</dd>
+</dl></article>
+<article class="rule" id="global_statistics.ngram_repetition">
+<h3>Repeated 4-word sequences <code>global_statistics.ngram_repetition</code></h3>
+<p>Share of word 4-grams that occur twice or more in the text. Predicted higher in AI (it loops); reversed on v2 train: humans repeat phrases more, AUC .71 overall (human &gt; AI), .73 natural, .69 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-SS">PAECH-SS</a>; <a href="#src-PAECH-SF">PAECH-SF</a>; <a href="#src-PANGRAM-G">PANGRAM-G</a>; <a href="#src-ShaibDiversity2025">ShaibDiversity2025</a>; <a href="#src-FrohlingZubiaga2021">FrohlingZubiaga2021</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>share of 4-grams</dd>
+<dt>Highlights</dt><dd>hits: repeated 4-grams</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.191</dd>
+</dl></article>
+<article class="rule" id="global_statistics.topk_word_share">
+<h3>Top-10 content words&#x27; share <code>global_statistics.topk_word_share</code></h3>
+<p>Share of content-word tokens taken by the text&#x27;s 10 most frequent content words. Predicted higher in AI; reversed on v2 train: humans concentrate on fewer words, AUC .66 overall (human &gt; AI), .69 natural, .65 antitell.</p>
+<dl>
+<dt>Source</dt><dd>SPEC; <a href="#src-FrohlingZubiaga2021">FrohlingZubiaga2021</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>share of content words</dd>
+<dt>Highlights</dt><dd>hits: occurrences of the top-10 content words</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.088</dd>
+</dl></article>
+<article class="rule" id="global_statistics.template_rate">
+<h3>Repeated function-word frames <code>global_statistics.template_rate</code></h3>
+<p>Content words replaced by X; share of 5-grams of the skeleton (&#x27;the X of the X&#x27;) that occur twice or more. AI reuses syntactic templates even while it varies its words: AI higher on v2 train, AUC .63 overall, .71 natural, .59 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-ShaibTemplates2024">ShaibTemplates2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of 5-grams</dd>
+<dt>Highlights</dt><dd>hits: word runs whose skeleton repeats</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.076</dd>
+</dl></article></section><section><h2 id="fam-grammar">grammar (18)</h2>
+<article class="rule" id="grammar.prepositions">
+<h3>Prepositions <code>grammar.prepositions</code></h3>
+<p>Biber&#x27;s preposition list per 1000 words. Predicted higher in AI; reversed on v2 train: humans use more, AUC .60 overall (human &gt; AI), .69 antitell, null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.456</dd>
+</dl></article>
+<article class="rule" id="grammar.clausal_coordination">
+<h3>Clause-joining &#x27;and&#x27; (&#x27;, and I ...&#x27;) <code>grammar.clausal_coordination</code></h3>
+<p>&#x27;and&#x27; starting a new clause with a pronoun subject. Sources disagree; on v2 train humans chain clauses more on the natural slices (AUC .64, human &gt; AI), null elsewhere.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.314</dd>
+</dl></article>
+<article class="rule" id="grammar.because">
+<h3>&#x27;because&#x27; <code>grammar.because</code></h3>
+<p>Predicted human; reversed on v2 train: AI uses &#x27;because&#x27; more, AUC .56 overall (AI &gt; human), .60 antitell (the ELI5 explanations).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.256</dd>
+</dl></article>
+<article class="rule" id="grammar.agentless_passive">
+<h3>Agentless passive <code>grammar.agentless_passive</code></h3>
+<p>be/get + participle without &#x27;by&#x27;. Contrary to the folk &#x27;AI is passive&#x27;, humans use more: AUC .57 overall (AI fewer), .59 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.185</dd>
+</dl></article>
+<article class="rule" id="grammar.present_participle_whiz">
+<h3>Post-nominal -ing (&#x27;the man standing there&#x27;) <code>grammar.present_participle_whiz</code></h3>
+<p>Noun-like word followed by an -ing word. AI more: AUC .58 overall, .65 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.172</dd>
+</dl></article>
+<article class="rule" id="grammar.present_participle">
+<h3>Participial clauses <code>grammar.present_participle</code></h3>
+<p>Clause-initial &#x27;-ing&#x27; words and &#x27;, V-ing the/a/to ...&#x27; tails (&#x27;..., revealing the cracks&#x27;). AI uses more: AUC .57 overall, .68 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.102</dd>
+</dl></article>
+<article class="rule" id="grammar.second_person">
+<h3>Second-person pronouns <code>grammar.second_person</code></h3>
+<p>you, your ... per 1000 words. Sources disagree; on v2 train humans address the reader more: AUC .58 overall (human &gt; AI), .63 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.091</dd>
+</dl></article>
+<article class="rule" id="grammar.negation_analytic">
+<h3>&#x27;not&#x27; and n&#x27;t <code>grammar.negation_analytic</code></h3>
+<p>Analytic negation per 1000 words. Humans more on the natural slices (AUC .59), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.088</dd>
+</dl></article>
+<article class="rule" id="grammar.phrasal_coordination">
+<h3>Phrasal &#x27;and&#x27; (N and N) <code>grammar.phrasal_coordination</code></h3>
+<p>&#x27;and&#x27; joining words of the same kind (&#x27;innovation and collaboration&#x27;) and &#x27;a, b, and c&#x27; lists. AI more: AUC .56 overall, .62 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.084</dd>
+</dl></article>
+<article class="rule" id="grammar.past_participle_whiz">
+<h3>Post-nominal -ed (&#x27;the data collected in 2020&#x27;) <code>grammar.past_participle_whiz</code></h3>
+<p>Noun-like word + -ed + preposition. AI more: AUC .55 overall, .63 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.082</dd>
+</dl></article>
+<article class="rule" id="grammar.existential_there">
+<h3>Existential &#x27;there is/are&#x27; <code>grammar.existential_there</code></h3>
+<p>&#x27;there is&#x27;, &#x27;there are&#x27;, &#x27;there&#x27;s&#x27; ... Humans more: AUC .57 overall, natural and antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.072</dd>
+</dl></article>
+<article class="rule" id="grammar.private_verbs">
+<h3>Private verbs (think, feel, know ...) <code>grammar.private_verbs</code></h3>
+<p>Verbs of thinking and feeling. Humans more on the natural slices (AUC .55), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.052</dd>
+</dl></article>
+<article class="rule" id="grammar.demonstrative_pronoun">
+<h3>Demonstrative pronouns (&#x27;this is&#x27;, &#x27;that was&#x27;) <code>grammar.demonstrative_pronoun</code></h3>
+<p>this/that/these/those standing alone before a verb or punctuation. Humans point back more: AUC .58 overall (AI fewer), .59 natural and antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.043</dd>
+</dl></article>
+<article class="rule" id="grammar.first_person">
+<h3>First-person pronouns <code>grammar.first_person</code></h3>
+<p>I, me, my, we, us, our ... per 1000 words. Human writing is personal; AI keeps an impersonal voice even when asked to tell a story: AUC .62 overall (AI fewer), .67 natural, .58 antitell (rate-matched by the antitell prompt, still lower). Kept next to mean_word_length although the two correlate (rho -.75): stance, not vocabulary.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-JiangHyland2024">JiangHyland2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.035</dd>
+</dl></article>
+<article class="rule" id="grammar.contractions">
+<h3>Contractions <code>grammar.contractions</code></h3>
+<p>n&#x27;t, &#x27;re, &#x27;ll, &#x27;ve, &#x27;d, &#x27;m and it&#x27;s/that&#x27;s/there&#x27;s ... per 1000 words. AI writes out the full forms more: AUC .58 overall (AI fewer), .63 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-WAPO">WAPO (contra)</a>; <a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.033</dd>
+</dl></article>
+<article class="rule" id="grammar.be_main_verb">
+<h3>&#x27;be&#x27; as main verb <code>grammar.be_main_verb</code></h3>
+<p>Forms of &#x27;be&#x27; not followed by a participle or &#x27;to&#x27; (&#x27;He is tall&#x27;, &#x27;it&#x27;s fine&#x27;). Plain copular clauses are a human, spoken feature: AUC .59 overall (AI fewer), .68 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.021</dd>
+</dl></article>
+<article class="rule" id="grammar.pro_verb_do">
+<h3>&#x27;do&#x27; as pro-verb (&#x27;so did I&#x27;) <code>grammar.pro_verb_do</code></h3>
+<p>do/does/did standing in for a verb phrase. Humans more: AUC .55 overall, .58 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.013</dd>
+</dl></article>
+<article class="rule" id="grammar.negation_synthetic">
+<h3>&#x27;no&#x27;, &#x27;neither&#x27;, &#x27;nor&#x27; <code>grammar.negation_synthetic</code></h3>
+<p>Synthetic negation. Humans more on antitell (AUC .55), null elsewhere.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.002</dd>
+</dl></article></section><section><h2 id="fam-hedging_filler">hedging filler (8)</h2>
+<article class="rule" id="hedging_filler.modals_predictive">
+<h3>&#x27;will&#x27;, &#x27;would&#x27;, &#x27;shall&#x27; <code>hedging_filler.modals_predictive</code></h3>
+<p>Predictive modals per 1000 words. Humans speculate and plan in will/would; AI uses fewer: AUC .65 overall, .64 natural, .66 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Herbold2023">Herbold2023</a>; <a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.325</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.amplifiers">
+<h3>Amplifiers (very, completely, extremely) <code>hedging_filler.amplifiers</code></h3>
+<p>Biber&#x27;s amplifiers. Humans intensify more: AUC .60 overall (AI fewer), .65 antitell, null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-JiangHyland2025meta">JiangHyland2025meta</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.280</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.discourse_particles">
+<h3>Sentence-initial &#x27;Well&#x27;, &#x27;So&#x27;, &#x27;Now&#x27; <code>hedging_filler.discourse_particles</code></h3>
+<p>Sentences opening with a spoken particle (well, now, anyway, oh, so). Humans more: AUC .59 overall, natural and antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.186</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.biber_hedges">
+<h3>Hedges (maybe, sort of, kind of, almost) <code>hedging_filler.biber_hedges</code></h3>
+<p>Biber&#x27;s hedges. Null overall and on natural; on antitell AI uses more (AUC .56, reversed), probably because the antitell prompt asked for a casual human voice.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-JiangHyland2025meta">JiangHyland2025meta</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.151</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.wp_human_wordiness">
+<h3>Plain wordy phrases (&#x27;in order to&#x27;, &#x27;the fact that&#x27;) <code>hedging_filler.wp_human_wordiness</code></h3>
+<p>Wordy constructions and simple superlatives Wikipedia lists as signs of human writing. Humans more: AUC .57 overall, .59 antitell, null natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>community</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.125</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.human_hedges">
+<h3>First-person hedges (&#x27;I think&#x27;, &#x27;pretty sure&#x27;, &#x27;IIRC&#x27;) <code>hedging_filler.human_hedges</code></h3>
+<p>Epistemic hedges in the first person. Humans more: AUC .56 overall, .57 natural, .55 antitell (rate-matched by the antitell prompt).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-Herbold2023">Herbold2023</a>; <a href="#src-JiangHyland2024">JiangHyland2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.120</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.modals_possibility">
+<h3>&#x27;can&#x27;, &#x27;could&#x27;, &#x27;may&#x27;, &#x27;might&#x27; <code>hedging_filler.modals_possibility</code></h3>
+<p>Possibility modals. Sources disagree; humans slightly more on natural (AUC .55), null elsewhere.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Herbold2023">Herbold2023</a>; <a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.086</dd>
+</dl></article>
+<article class="rule" id="hedging_filler.emphatics">
+<h3>Emphatics (really, just, a lot, so + adjective) <code>hedging_filler.emphatics</code></h3>
+<p>Conversational emphasis. Humans more: AUC .56 overall, .61 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.016</dd>
+</dl></article></section><section><h2 id="fam-lexical">lexical (19)</h2>
+<article class="rule" id="lexical.slopscore_fiction_words">
+<h3>Fiction slop words (gaze, whispered ...) <code>lexical.slopscore_fiction_words</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Words over-represented in model fiction (antislop top 200). One of three lists that survive the antitell prompt: AUC .61 overall, .68 natural (WritingPrompts .88), .60 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-AS">PAECH-AS</a>; <a href="#src-PAECH-SF">PAECH-SF</a>; <a href="#src-PAECH-SS">PAECH-SS</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.373</dd>
+</dl></article>
+<article class="rule" id="lexical.connectives_biber">
+<h3>Conjuncts (however, therefore, thus ...) <code>lexical.connectives_biber</code></h3>
+<p>Biber&#x27;s conjunct list. Sources disagree; on v2 train humans use more: AUC .61 overall (human &gt; AI), .70 antitell, null natural. The antitell prompt banned formal transitions, so this is partly a prompt effect.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-Herbold2023">Herbold2023</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.290</dd>
+</dl></article>
+<article class="rule" id="lexical.wp_era_2026">
+<h3>Mid-2026 AI vocabulary (challenge, foster, quietly ...) <code>lexical.wp_era_2026</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Wikipedia&#x27;s weakly sourced list for 2026 models (challenge, clearer, dependable, foster, leverage, matters, practical, quietly, steady ...). Survives the antitell prompt: AUC .61 overall, .64 natural, .59 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; <a href="#src-GRAPHITE">GRAPHITE</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.225</dd>
+</dl></article>
+<article class="rule" id="lexical.graphite_claude5">
+<h3>Claude-style words (deliberate, measured, steady) <code>lexical.graphite_claude5</code></h3>
+<p>Phrases Graphite attributes to Claude Opus 4.x/5, plus vague-concrete numbers (&#x27;a handful&#x27;, &#x27;two or three&#x27;). Survives the antitell prompt: AUC .58 overall, .60 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.224</dd>
+</dl></article>
+<article class="rule" id="lexical.np_pp_bundles">
+<h3>Noun-preposition bundles (&#x27;the importance of&#x27;) <code>lexical.np_pp_bundles</code></h3>
+<p>&#x27;the X-tion of&#x27;, &#x27;in the X of&#x27; ... Predicted higher in AI; reversed on antitell (AUC .61, human &gt; AI), null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-JiangHyland2024">JiangHyland2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.212</dd>
+</dl></article>
+<article class="rule" id="lexical.profanity_slang">
+<h3>Swearing and internet slang <code>lexical.profanity_slang</code></h3>
+<p>damn, hell, crap, lol, tbh, gonna, kinda ... Humans more: AUC .58 overall (AI fewer), .61 antitell. Only a positive count is evidence.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-Guo2023HC3">Guo2023HC3</a>; <a href="#src-MILD-REPO">MILD-REPO</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.174</dd>
+</dl></article>
+<article class="rule" id="lexical.mildrgb_banned">
+<h3>Banned words of the antitell prompt <code>lexical.mildrgb_banned</code></h3>
+<p>delve, crucial, vital, pivotal, robust, leverage, navigate, tapestry ... (the list the antitell generation prompt banned). AI more on natural (AUC .57), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.109</dd>
+</dl></article>
+<article class="rule" id="lexical.kobak_mixed">
+<h3>Excess words (Kobak et al., content/style) <code>lexical.kobak_mixed</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. AI more on natural (AUC .56), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Kobak2025">Kobak2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.108</dd>
+</dl></article>
+<article class="rule" id="lexical.wp_era_gpt4">
+<h3>2023-24 (GPT-4) vocabulary <code>lexical.wp_era_gpt4</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Wikipedia&#x27;s GPT-4-era list. AI more on natural (AUC .58).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>community</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.091</dd>
+</dl></article>
+<article class="rule" id="lexical.liang_review_adj">
+<h3>Evaluative adjectives (Liang et al.) <code>lexical.liang_review_adj</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Adjectives over-used in AI-written peer reviews (commendable, innovative ...). AI more: AUC .56 overall, .63 natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Liang2024rev">Liang2024rev</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.076</dd>
+</dl></article>
+<article class="rule" id="lexical.slopscore_essay_words">
+<h3>Essay slop words (slop-score) <code>lexical.slopscore_essay_words</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Words over-represented in model essays (Paech&#x27;s slop-score). AI more: AUC .61 overall, .73 natural, null on antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-SS">PAECH-SS</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.066</dd>
+</dl></article>
+<article class="rule" id="lexical.wapo_core_modern">
+<h3>&#x27;core&#x27;, &#x27;modern&#x27; <code>lexical.wapo_core_modern</code></h3>
+<p>GPT-4o favourites per the Washington Post analysis. AI more on natural (AUC .55), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WAPO">WAPO</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.064</dd>
+</dl></article>
+<article class="rule" id="lexical.reinhart_overrep">
+<h3>Instruct-model words (camaraderie, palpable ...) <code>lexical.reinhart_overrep</code></h3>
+<p>Words instruction-tuned models over-use (Reinhart et al.). AI more on natural (AUC .60), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.063</dd>
+</dl></article>
+<article class="rule" id="lexical.liang_review_adv">
+<h3>Adverbs (Liang et al.) <code>lexical.liang_review_adv</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. AI more on natural (AUC .58), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Liang2024rev">Liang2024rev</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.062</dd>
+</dl></article>
+<article class="rule" id="lexical.slopforensics_words">
+<h3>slop-forensics words <code>lexical.slopforensics_words</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Top words of model output over varied prompts. AI more on natural (AUC .64), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-SF">PAECH-SF</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.026</dd>
+</dl></article>
+<article class="rule" id="lexical.human_informal">
+<h3>Human-voice markers (pretty, I guess, years ago) <code>lexical.human_informal</code></h3>
+<p>Informal markers from Graphite and mild-rgb. Humans more: AUC .55 overall, .56 natural and antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-MILD-REPO">MILD-REPO</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.025</dd>
+</dl></article>
+<article class="rule" id="lexical.wp_era_gpt4o">
+<h3>2024-25 (GPT-4o) vocabulary <code>lexical.wp_era_gpt4o</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. Wikipedia&#x27;s GPT-4o-era list. AI more on natural (AUC .55).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>community</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.015</dd>
+</dl></article>
+<article class="rule" id="lexical.wp_aivocab">
+<h3>Wikipedia&#x27;s AI-vocabulary box <code>lexical.wp_aivocab</code></h3>
+<p>additionally, bolster, crucial, delve, enhance, foster, intricate, pivotal, showcase, testament ... per 1000 words. AI more on natural (AUC .59), null overall.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; <a href="#src-Kobak2025">Kobak2025</a>; <a href="#src-JuzekWard2025">JuzekWard2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.011</dd>
+</dl></article>
+<article class="rule" id="lexical.pangram_guide_list">
+<h3>AI vocabulary (Pangram&#x27;s list) <code>lexical.pangram_guide_list</code></h3>
+<p>Hits (words and phrases) of the list per 1000 words. A broad list of words and phrases that AI over-uses, compiled by the detector vendor Pangram; it also holds generic words (health, life, key). AI more on v2 train: AUC .59 overall, .75 natural, null on antitell (banned words).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>lexicon</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.009</dd>
+</dl></article></section><section><h2 id="fam-mined">mined (12)</h2>
+<article class="rule" id="mined.human_quantifiers">
+<h3>Plain quantifiers (all, any, much, many, lots; some of, most of, one of) <code>mined.human_quantifiers</code></h3>
+<p>People quantify plainly: all, any, much, many, lots, and partitives (some of, most of, one of, both of ...). On v2 train humans use more (AI&lt;H): AUC .71 overall, .66 natural, .74 antitell; human-ward on every slice (weakest on Wikipedia, .56).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.617</dd>
+</dl></article>
+<article class="rule" id="mined.explainer_vocab">
+<h3>Explainer vocabulary (specific, rules, gap, shift, decades, ordinary, genuinely ...) <code>mined.explainer_vocab</code></h3>
+<p>The 2026 explainer register: abstract framing nouns and adjectives (specific, rule(s), gap(s), shift(s/ed), decades, ordinary, genuinely, final, remained) that none of the community or literature lists has. On v2 train AI uses more: AUC .69 overall, .69 natural, .69 antitell; AI-ward on every slice (.59-.77). Six mined words were dropped at integration as topical or carried by one slice (system(s), central, centuries, ancient; specifically had no signal).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.453</dd>
+</dl></article>
+<article class="rule" id="mined.plain_multiword">
+<h3>Plain multiword phrases (able to, as well, due to, for example, have to) <code>mined.plain_multiword</code></h3>
+<p>People use plain multiword phrasing (able to, as well, due to, for example, have/has/had to, want to, a few, a little). On v2 train humans use more (AI&lt;H): AUC .69 overall, .68 natural, .71 antitell; human-ward on every slice (weakest on Wikipedia, .56). Fairness note: learner and student writing uses these too, which pushes it toward &#x27;human&#x27; (the safe direction).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.323</dd>
+</dl></article>
+<article class="rule" id="mined.or_alternatives">
+<h3>Alternatives with &#x27;or&#x27; <code>mined.or_alternatives</code></h3>
+<p>AI offers alternatives (&#x27;X or Y&#x27;, &#x27;whether ... or ...&#x27;); &#x27;or&#x27; was the largest AI coefficient of bag-of-words LR on half A. On v2 train AI uses more: AUC .60 overall, .59 natural, .62 antitell; flat on AITA (.49) and WritingPrompts (.47).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.292</dd>
+</dl></article>
+<article class="rule" id="mined.that_pronoun">
+<h3>Complement &#x27;that&#x27; + pronoun (&#x27;that they&#x27;, &#x27;that we&#x27;) <code>mined.that_pronoun</code></h3>
+<p>People follow complement &#x27;that&#x27; with a pronoun subject (&#x27;that they&#x27;, &#x27;that we&#x27;, &#x27;that there&#x27;); AI more often writes a noun subject. On v2 train humans use more (AI&lt;H): AUC .64 overall, .65 natural, .64 antitell.</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.283</dd>
+</dl></article>
+<article class="rule" id="mined.connective_prepositions">
+<h3>Connectives through, toward(s), within, across, whether, itself <code>mined.connective_prepositions</code></h3>
+<p>AI links ideas with a small set of spatial-logical connectives (through, toward(s), within, across, whether, itself). Mined subset of Biber&#x27;s prepositions that goes the other way from the full list (grammar.prepositions is AI&lt;H). On v2 train AI uses more: AUC .67 overall, .70 natural, .66 antitell; AI-ward on every slice (.62-.80).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.245</dd>
+</dl></article>
+<article class="rule" id="mined.hyphen_compounds">
+<h3>Lower-case hyphenated compounds <code>mined.hyphen_compounds</code></h3>
+<p>AI writes more lower-case hyphenated compounds (&#x27;long-term&#x27;, &#x27;well-known&#x27;, &#x27;trill-filled&#x27;); URLs are skipped. On v2 train AI uses more: AUC .61 overall, .65 natural, .59 antitell; AI-ward on every slice. Replaces punctuation.hyphen (rho +.94, weaker in every group).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.184</dd>
+</dl></article>
+<article class="rule" id="mined.article_openers">
+<h3>Sentences open with an article (&#x27;The system ...&#x27;, &#x27;A small change ...&#x27;) <code>mined.article_openers</code></h3>
+<p>AI opens sentences with a noun phrase (&#x27;The system ...&#x27;); people more often open with a pronoun, a conjunction or a discourse word. Share of sentences whose first word (after markup and opening quotes) is the/a/an. On v2 train AI is higher: AUC .66 overall, .59 natural, .70 antitell; weakest on Wikipedia (.56), where encyclopedic human prose opens with &#x27;The&#x27; too.</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of sentences</dd>
+<dt>Highlights</dt><dd>hits: the opening article</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.171</dd>
+</dl></article>
+<article class="rule" id="mined.plain_period_endings">
+<h3>Sentences end in a bare full stop <code>mined.plain_period_endings</code></h3>
+<p>AI ends nearly every sentence with a bare full stop; people also end on ?, !, a closing bracket or quote, &#x27;...&#x27; or a colon. Counted on real sentences only (&gt;= 4 words, not a heading or list line, ending in sentence punctuation), so unpunctuated headings, list items and Reddit lines do not count. On v2 train AI is higher: AUC .69 overall, .66 natural, .73 antitell (the mining definition on all sentences gave .75, partly from headings and list lines on Wikipedia and Stack Overflow).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of sentences</dd>
+<dt>Highlights</dt><dd>hits: the full stop of each real sentence that ends in one</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.164</dd>
+</dl></article>
+<article class="rule" id="mined.run_on_sentences">
+<h3>Run-on sentences (more than 40 words) <code>mined.run_on_sentences</code></h3>
+<p>People write run-on sentences of more than 40 words; AI keeps sentences in a narrow band. Share of sentences with &gt; 40 words. On v2 train humans are higher (AI&lt;H): AUC .66 overall, .59 natural, .72 antitell. Fairness note: learners and young writers write run-ons too, which pushes them toward &#x27;human&#x27; (the safe direction).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>share of sentences</dd>
+<dt>Highlights</dt><dd>hits: the sentences over 40 words</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.112</dd>
+</dl></article>
+<article class="rule" id="mined.plain_verbs">
+<h3>Plain verbs and evaluations (get, go, want, good, great, ok, sorry) <code>mined.plain_verbs</code></h3>
+<p>People use core verbs and plain evaluations (get, go, want, good, great, ok, sorry), where AI picks more specific verbs and adjectives. On v2 train humans use more (AI&lt;H): AUC .61 overall, .69 natural, .56 antitell; strongest on Stack Overflow (.79) and WritingPrompts (.76).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.081</dd>
+</dl></article>
+<article class="rule" id="mined.colon_lowercase">
+<h3>Mid-sentence colon continued in lower case (&#x27;the rule is simple: you wait&#x27;) <code>mined.colon_lowercase</code></h3>
+<p>AI uses a mid-sentence colon continued in lower case (&#x27;the rule is simple: you wait&#x27;); people more often write capitalised label colons (&#x27;Note: The ...&#x27;). Share of colons followed by a lower-case word, of all colons followed by a letter; undefined without such colons. On v2 train AI is higher: AUC .68 overall, .68 natural, .67 antitell (null on AITA, .47).</p>
+<dl>
+<dt>Source</dt><dd>first-hand: mined on v2 train (half A), replicated on half B</dd>
+<dt>Evidence type</dt><dd>first-hand</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of colons</dd>
+<dt>Highlights</dt><dd>hits: colons followed by a lower-case word</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.075</dd>
+</dl></article></section><section><h2 id="fam-punctuation">punctuation (13)</h2>
+<article class="rule" id="punctuation.parentheses">
+<h3>Parentheses <code>punctuation.parentheses</code></h3>
+<p>Opening parentheses per 1000 words. Humans add asides in brackets; 2026 models almost never do (fires in 11% of AI vs 65% of human train texts). AUC .78 overall (AI fewer), .66 natural, .87 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-ECON">ECON</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-PANGRAM-G">PANGRAM-G</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.597</dd>
+</dl></article>
+<article class="rule" id="punctuation.em_dash">
+<h3>Em dashes <code>punctuation.em_dash</code></h3>
+<p>Em dashes (—) per 1000 words, the best-known AI tell. On v2 train it holds on the natural slices (AUC .66; WritingPrompts .69, Wikipedia .65) and is uninformative on antitell, where mild-rgb injected em dashes into the AI texts at the human rate. A real tell, but typographic: the --ascii-norm evaluation turns it into a hyphen.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; <a href="#src-WAPO">WAPO</a>; <a href="#src-PANGRAM-9">PANGRAM-9</a>; <a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-ECON">ECON</a>; <a href="#src-ARS">ARS</a>; <a href="#src-Freeburg2026">Freeburg2026</a>; <a href="#src-Czuma2026a">Czuma2026a</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.370</dd>
+</dl></article>
+<article class="rule" id="punctuation.oxford_comma">
+<h3>Serial (Oxford) comma <code>punctuation.oxford_comma</code></h3>
+<p>Among &#x27;X, Y(,) and Z&#x27; lists, the share written with the serial comma. AI uses it consistently, people mostly leave it out: AUC .68 overall, .70 natural, .68 antitell. Undefined in texts without such a list.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of triads</dd>
+<dt>Highlights</dt><dd>units: each triad</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.286</dd>
+</dl></article>
+<article class="rule" id="punctuation.comma_rate">
+<h3>Commas <code>punctuation.comma_rate</code></h3>
+<p>Commas per 1000 words. Sources disagree; on v2 train AI uses more: AUC .59 overall, .68 natural, null on antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-ECON">ECON</a>; <a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.122</dd>
+</dl></article>
+<article class="rule" id="punctuation.numbers_symbols">
+<h3>Digits and symbols <code>punctuation.numbers_symbols</code></h3>
+<p>Numbers and the symbols % $ € £ @ &amp; / + = &lt; &gt; per 1000 words, outside URLs. Predicted higher in AI; reversed on v2 train: humans give more figures, dates and symbols, AUC .68 overall (human &gt; AI), .63 natural, .72 antitell, human-ward on every slice. The probe was artefact-flagged on Stack Overflow because of URLs (40% of human answers); URLs are now skipped.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MunozOrtiz2024">MunozOrtiz2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.078</dd>
+</dl></article>
+<article class="rule" id="punctuation.dash_surrogates">
+<h3>Typed dashes (&#x27; - &#x27;, &#x27;--&#x27;) <code>punctuation.dash_surrogates</code></h3>
+<p>A spaced hyphen or double hyphen used as a dash. People type these; models emit a real dash character. AI fewer on v2 train: AUC .56 overall, .63 antitell, null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; <a href="#src-Freeburg2026">Freeburg2026</a></dd>
+<dt>Evidence type</dt><dd>community</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.076</dd>
+</dl></article>
+<article class="rule" id="punctuation.irregular_marks">
+<h3>Emotional marks and ALL CAPS <code>punctuation.irregular_marks</code></h3>
+<p>&#x27;?!&#x27;, &#x27;!!&#x27;, &#x27;??&#x27; runs and ALL-CAPS words that are not acronyms, per 1000 words. Humans shout and exclaim; AI writes evenly. AUC .61 overall (AI fewer), .57 natural, .64 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Guo2023HC3">Guo2023HC3</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.050</dd>
+</dl></article>
+<article class="rule" id="punctuation.exclamation">
+<h3>Exclamation marks <code>punctuation.exclamation</code></h3>
+<p>&#x27;!&#x27; per 1000 words. Humans exclaim more: AUC .56 overall, .58 antitell (rate-matched by the antitell prompt, still lower in AI), null natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-Guo2023HC3">Guo2023HC3</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.021</dd>
+</dl></article>
+<article class="rule" id="punctuation.punct_rate">
+<h3>Punctuation overall <code>punctuation.punct_rate</code></h3>
+<p>All punctuation marks per 1000 words. Slightly lower in AI on antitell (AUC .57), null elsewhere. The probe counted marks per word; here per 1000 words (same ranking).</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MunozOrtiz2024">MunozOrtiz2024</a>; <a href="#src-Guo2023HC3">Guo2023HC3</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.003</dd>
+</dl></article>
+<article class="rule" id="punctuation.curly_quotes">
+<h3>Curly quotes <code>punctuation.curly_quotes</code></h3>
+<p>Any curly quote or apostrophe. AI &gt; human on the natural slices (AUC .70) but that is the platform convention of the human side (SO .06 vs .72, Wikipedia .07 vs .77 of texts), not the writer.</p><p class="note"><strong>Not in the scored model:</strong> platform artefact on v2: Stack Overflow and Wikipedia human text is straight-quoted, rasbt&#x27;s AI text curly; mild-rgb injected typography into the antitell AI texts at human rates (docs/DATA.md)</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP-S">WP-S</a>; <a href="#src-MILD-AITA">MILD-AITA</a>; <a href="#src-MILD-ELI5">MILD-ELI5</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>presence (0/1)</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>presence</dd>
+<dt>Status</dt><dd>variant</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>&ndash;</dd>
+</dl></article>
+<article class="rule" id="punctuation.mixed_quote_styles">
+<h3>Curly and straight quotes mixed <code>punctuation.mixed_quote_styles</code></h3>
+<p>Curly and straight quotes both in one text. AUC .62 on the only clean slice (WritingPrompts), artefact elsewhere.</p><p class="note"><strong>Not in the scored model:</strong> platform artefact on v2: Stack Overflow and Wikipedia human text is straight-quoted, rasbt&#x27;s AI text curly; mild-rgb injected typography into the antitell AI texts at human rates (docs/DATA.md)</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-WP-S">WP-S</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>presence (0/1)</dd>
+<dt>Highlights</dt><dd>units: all quotes</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>variant</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>&ndash;</dd>
+</dl></article>
+<article class="rule" id="punctuation.double_space">
+<h3>Double spaces <code>punctuation.double_space</code></h3>
+<p>Two spaces inside a line. Human &gt; AI (AUC .57), all of it from flagged slices.</p><p class="note"><strong>Not in the scored model:</strong> old Reddit typing on WritingPrompts (no AI text has one); injected into antitell AI texts at human rates; null without the flagged slices (.53)</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>presence (0/1)</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>presence</dd>
+<dt>Status</dt><dd>variant</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>&ndash;</dd>
+</dl></article>
+<article class="rule" id="punctuation.ellipsis">
+<h3>Ellipses <code>punctuation.ellipsis</code></h3>
+<p>&#x27;…&#x27; and &#x27;...&#x27; per 1000 words. Human &gt; AI on antitell (AUC .59).</p><p class="note"><strong>Not in the scored model:</strong> signal only on antitell, where mild-rgb injected ellipses into AI texts; null without the flagged slices (.46)</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-SLHCK">SLHCK</a>; <a href="#src-Guo2023HC3">Guo2023HC3</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>variant</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>&ndash;</dd>
+</dl></article></section><section><h2 id="fam-statistics">statistics (7)</h2>
+<article class="rule" id="statistics.mattr">
+<h3>Vocabulary variety (MATTR) <code>statistics.mattr</code></h3>
+<p>Moving-average type-token ratio over windows of 100 words: how few words repeat. The folk and GPT-2-era claim is that AI repeats itself; on v2 train it is the opposite: 2026 models (and Opus/GPT-4o on WritingPrompts) vary their vocabulary more than humans: AUC .80 overall, .90 natural, .74 antitell. This is also the direction that should not penalise English learners, whose variety is lower.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-WP">WP</a>; <a href="#src-PAECH-SS">PAECH-SS</a>; <a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-Herbold2023">Herbold2023</a>; <a href="#src-MunozOrtiz2024">MunozOrtiz2024</a>; <a href="#src-Suvanto2026">Suvanto2026</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>type-token ratio</dd>
+<dt>Highlights</dt><dd>units: words that repeat a word used within the previous 100 words (they lower the value)</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.556</dd>
+</dl></article>
+<article class="rule" id="statistics.specificity">
+<h3>Concrete specifics (numbers, names, months) <code>statistics.specificity</code></h3>
+<p>Digits, capitalised words inside a sentence (names) and month names per 1000 words. Sources disagree; on v2 train humans give more specifics: AUC .63 overall (human &gt; AI), .59 natural, .69 antitell. AI text stays generic.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a>; <a href="#src-WP">WP</a>; <a href="#src-GRAPHITE">GRAPHITE</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.361</dd>
+</dl></article>
+<article class="rule" id="statistics.mean_word_length">
+<h3>Mean word length <code>statistics.mean_word_length</code></h3>
+<p>Mean letters per word: the one feature kept for the formal-register cluster (Latinate words, nominalisations, attributive adjectives; rho .73-.77 with it). AI prose leans on longer, more formal words. On v2 train AI words are longer: AUC .67 overall, .79 natural, .60 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-ECON">ECON</a>; <a href="#src-Reinhart2025">Reinhart2025</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>letters per word</dd>
+<dt>Highlights</dt><dd>units: words of 10+ letters (the value uses every word)</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.202</dd>
+</dl></article>
+<article class="rule" id="statistics.sentence_length_band">
+<h3>Sentences of 8-20 words <code>statistics.sentence_length_band</code></h3>
+<p>Share of sentences of 8 to 20 words, the band 2026 GPT models keep to. AI keeps more sentences in the band: AUC .60 overall, .65 antitell, null on natural.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a></dd>
+<dt>Evidence type</dt><dd>expert</dd>
+<dt>Direction in the sources</dt><dd>AI-ward (AI higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>share of sentences</dd>
+<dt>Highlights</dt><dd>units: sentences in the band</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.113</dd>
+</dl></article>
+<article class="rule" id="statistics.burstiness">
+<h3>Sentence-length variation (burstiness) <code>statistics.burstiness</code></h3>
+<p>Coefficient of variation of sentence lengths. Human writers alternate long and short sentences more. On v2 train AI texts are more even (lower CV): AUC .67 overall, .70 natural, .64 antitell, although the antitell prompt asked the models for uneven rhythm.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-GRAPHITE">GRAPHITE</a>; <a href="#src-PANGRAM-G">PANGRAM-G</a>; <a href="#src-GPTZERO">GPTZERO</a>; <a href="#src-MILD-REPO">MILD-REPO</a>; <a href="#src-MunozOrtiz2024">MunozOrtiz2024</a>; <a href="#src-Guo2023HC3">Guo2023HC3</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>statistic (CV)</dd>
+<dt>Highlights</dt><dd>units: every sentence (texts with &gt;= 5 sentences)</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.104</dd>
+</dl></article>
+<article class="rule" id="statistics.is_are_rate">
+<h3>&#x27;is&#x27; / &#x27;are&#x27; <code>statistics.is_are_rate</code></h3>
+<p>Copula &#x27;is/are&#x27; per 1000 words; AI is said to avoid the plain copula (&#x27;serves as&#x27; instead of &#x27;is&#x27;). Holds on v2 train: AI uses fewer, AUC .57 overall, .62 natural, .56 antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-WP">WP</a>; GengTrotta (via WP)</dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>rate</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.041</dd>
+</dl></article>
+<article class="rule" id="statistics.ly_adverbs">
+<h3>-ly adverbs <code>statistics.ly_adverbs</code></h3>
+<p>Adverbs ending in -ly (stoplist of non-adverbs like &#x27;family&#x27;, &#x27;early&#x27;). Predicted rarer in AI; reversed on v2 train: AI uses more, AUC .57 overall (AI &gt; human), .70 natural, null on antitell.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-Reinhart2025">Reinhart2025</a>; <a href="#src-Liang2024rev">Liang2024rev</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>per 1k words</dd>
+<dt>Highlights</dt><dd>hits</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.029</dd>
+</dl></article></section><section><h2 id="fam-structure">structure (2)</h2>
+<article class="rule" id="structure.uniform_para_length">
+<h3>Uniform paragraph lengths <code>structure.uniform_para_length</code></h3>
+<p>Coefficient of variation of paragraph word counts. AI paragraphs are cut to a similar size; people write a two-line paragraph next to a long one. The strongest single tell on v2 train: AUC .81 overall (AI lower), .76 natural, .84 antitell; .80 without the flagged Wikipedia slice. Texts with &gt;= 3 paragraphs.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PANGRAM-G">PANGRAM-G</a>; SPEC; <a href="#src-MILD-ELI5">MILD-ELI5</a>; <a href="#src-MunozOrtiz2024">MunozOrtiz2024</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>human-ward (humans higher)</dd>
+<dt>Direction observed on v2 train</dt><dd>human-ward (humans higher)</dd>
+<dt>Unit</dt><dd>statistic (CV)</dd>
+<dt>Highlights</dt><dd>units: every paragraph</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>-0.631</dd>
+</dl></article>
+<article class="rule" id="structure.para_length">
+<h3>Mean paragraph length <code>structure.para_length</code></h3>
+<p>Mean words per paragraph. Sources disagree; on v2 train AI paragraphs are longer: AUC .63 overall, .68 natural, .62 antitell; .62 without Wikipedia.</p>
+<dl>
+<dt>Source</dt><dd><a href="#src-PAECH-SS">PAECH-SS</a></dd>
+<dt>Evidence type</dt><dd>empirical</dd>
+<dt>Direction in the sources</dt><dd>mixed / contested</dd>
+<dt>Direction observed on v2 train</dt><dd>AI-ward (AI higher)</dd>
+<dt>Unit</dt><dd>words per paragraph</dd>
+<dt>Highlights</dt><dd>units: every paragraph</dd>
+<dt>Kind</dt><dd>code</dd>
+<dt>Status</dt><dd>main</dd>
+<dt>LR weight (standardised; + = AI-ward)</dt><dd>+0.136</dd>
+</dl></article></section>
+<section id="sources"><h2>Sources</h2><ul class="sources"><li id="src-A16Z"><strong>A16Z</strong>: a16z crypto editorial (body credited to @stephbzinn), &quot;The habits of AI writing, and what to do about them&quot;, X article, 2026-08-24. <a href="https://x.com/a16zcrypto/status/2091934263302402318" rel="noopener noreferrer">https://x.com/a16zcrypto/status/2091934263302402318</a></li><li id="src-ARS"><strong>ARS</strong>: Edwards, B., &quot;Forget AGI—Sam Altman celebrates ChatGPT finally following em dash formatting rules&quot;, Ars Technica, 2025-11-14. <a href="https://arstechnica.com/ai/2025/11/forget-agi-sam-altman-celebrates-chatgpt-finally-following-em-dash-formatting-rules/" rel="noopener noreferrer">https://arstechnica.com/ai/2025/11/forget-agi-sam-altman-celebrates-chatgpt-finally-following-em-dash-formatting-rules/</a></li><li id="src-Czuma2026a"><strong>Czuma2026a</strong>: Czuma, P. (2026). Em-ergence of the em-dash: a population-level rise in em-dash frequency in medRxiv preprints at the dawn of the large-language-model era. arXiv:2606.29540. [V][V-abs]</li><li id="src-ECON"><strong>ECON</strong>: &quot;How to spot AI writing&quot;, *The Economist*, 2026-07-30. <a href="https://www.economist.com/culture/2026/07/30/how-to-spot-ai-writing" rel="noopener noreferrer">https://www.economist.com/culture/2026/07/30/how-to-spot-ai-writing</a></li><li id="src-Freeburg2026"><strong>Freeburg2026</strong>: Freeburg, E. M. (2026). The last fingerprint: How markdown training shapes LLM prose. arXiv:2603.27006. [V][V-abs]</li><li id="src-FrohlingZubiaga2021"><strong>FrohlingZubiaga2021</strong>: Fröhling, L., &amp; Zubiaga, A. (2021). Feature-based detection of automated language models: tackling GPT-2, GPT-3 and Grover. *PeerJ Computer Science* 7, e443. <a href="https://doi.org/10.7717/peerj-cs.443" rel="noopener noreferrer">https://doi.org/10.7717/peerj-cs.443</a></li><li id="src-GPTZERO"><strong>GPTZERO</strong>: GPTZero, &quot;AI Vocabulary&quot; (Top-50, &quot;Updated November 2026&quot;); Chen, V., &quot;10 Phrases Most Overused by AI&quot;, GPTZero blog, 2024-10-07. <a href="https://gptzero.me/ai-vocabulary" rel="noopener noreferrer">https://gptzero.me/ai-vocabulary</a></li><li id="src-GRAPHITE"><strong>GRAPHITE</strong>: Druck, G., Paredes, J. L., Smith, E., &quot;AI Tells&quot;, Graphite (Five Percent research), 2026-09-16. <a href="https://graphite.io/five-percent/research/ai-tells" rel="noopener noreferrer">https://graphite.io/five-percent/research/ai-tells</a></li><li id="src-Guo2023HC3"><strong>Guo2023HC3</strong>: Guo, B., Zhang, X., Wang, Z., Jiang, M., Nie, J., Ding, Y., Yue, J., &amp; Wu, Y. (2023). How close is ChatGPT to human experts? Comparison corpus, evaluation, and detection. arXiv:2301.07597 (preprint). [V][V-full]</li><li id="src-Herbold2023"><strong>Herbold2023</strong>: Herbold, S., Hautli-Janisz, A., Heuer, U., Kikteva, Z., &amp; Trautsch, A. (2023). A large-scale comparison of human-written versus ChatGPT-generated essays. *Scientific Reports* 13, 18617. <a href="https://doi.org/10.1038/s41598-023-45644-9" rel="noopener noreferrer">https://doi.org/10.1038/s41598-023-45644-9</a></li><li id="src-JiangHyland2024"><strong>JiangHyland2024</strong>: Jiang, F. (K.), &amp; Hyland, K. (2024). Does ChatGPT argue like students? Bundles in argumentative essays. *Applied Linguistics* 46, 375–391. <a href="https://doi.org/10.1093/applin/amae052" rel="noopener noreferrer">https://doi.org/10.1093/applin/amae052</a></li><li id="src-JiangHyland2025meta"><strong>JiangHyland2025meta</strong>: Jiang, F. (K.), &amp; Hyland, K. (2025). Rhetorical distinctions: Comparing metadiscourse in essays by ChatGPT and students. *English for Specific Purposes* 79, 17–29. <a href="https://doi.org/10.1016/j.esp.2025.03.001" rel="noopener noreferrer">https://doi.org/10.1016/j.esp.2025.03.001</a></li><li id="src-JuzekWard2025"><strong>JuzekWard2025</strong>: Juzek, T. S., &amp; Ward, Z. B. (2025). Why does ChatGPT &quot;delve&quot; so much? Exploring the sources of lexical overrepresentation in large language models. *COLING 2025*, 6397–6411. <a href="https://aclanthology.org/2025.coling-main.426" rel="noopener noreferrer">https://aclanthology.org/2025.coling-main.426</a></li><li id="src-Kobak2025"><strong>Kobak2025</strong>: Kobak, D., González-Márquez, R., Horvát, E.-Á., &amp; Lause, J. (2025). Delving into LLM-assisted writing in biomedical publications through excess vocabulary. *Science Advances* 11(27), eadt3813. <a href="https://doi.org/10.1126/sciadv.adt3813" rel="noopener noreferrer">https://doi.org/10.1126/sciadv.adt3813</a></li><li id="src-Liang2024rev"><strong>Liang2024rev</strong>: Liang, W., Izzo, Z., Zhang, Y., Lepp, H., Cao, H., Zhao, X., Chen, L., Ye, H., Liu, S., Huang, Z., McFarland, D. A., &amp; Zou, J. Y. (2024). Monitoring AI-modified content at scale: A case study on the impact of ChatGPT on AI conference peer reviews. *ICML 2024*, PMLR 235:29575–29620. arXiv:2403.07183. [V][V-full]</li><li id="src-MILD-AITA"><strong>MILD-AITA</strong>: mild-rgb, &quot;AITA Human-vs-AI corpus (2026 generators)&quot;, HF dataset, sha 621a05d, 2026-08-25. Apache-2.0. <a href="https://huggingface.co/datasets/mild-rgb/aita-human-vs-ai" rel="noopener noreferrer">https://huggingface.co/datasets/mild-rgb/aita-human-vs-ai</a></li><li id="src-MILD-ELI5"><strong>MILD-ELI5</strong>: mild-rgb, &quot;ELI5 Human vs AI (long-form)&quot;, HF dataset, sha ce97b32, created 2026-08-23. CC-BY-4.0. <a href="https://huggingface.co/datasets/mild-rgb/eli5-human-vs-ai" rel="noopener noreferrer">https://huggingface.co/datasets/mild-rgb/eli5-human-vs-ai</a></li><li id="src-MILD-REPO"><strong>MILD-REPO</strong>: mild-rgb, *ai-writing-detector* (GitHub). Commit f96cb80, 2026-08-25. <a href="https://github.com/mild-rgb/ai-writing-detector" rel="noopener noreferrer">https://github.com/mild-rgb/ai-writing-detector</a></li><li id="src-MunozOrtiz2024"><strong>MunozOrtiz2024</strong>: Muñoz-Ortiz, A., Gómez-Rodríguez, C., &amp; Vilares, D. (2024). Contrasting linguistic patterns in human and LLM-generated news text. *Artificial Intelligence Review* 57, 265. <a href="https://doi.org/10.1007/s10462-024-10903-2" rel="noopener noreferrer">https://doi.org/10.1007/s10462-024-10903-2</a></li><li id="src-PAECH-AS"><strong>PAECH-AS</strong>: Paech, S. *antislop-sampler* (software, MIT). Commit 0ae330e, 2026-03-05. <a href="https://github.com/sam-paech/antislop-sampler" rel="noopener noreferrer">https://github.com/sam-paech/antislop-sampler</a></li><li id="src-PAECH-SF"><strong>PAECH-SF</strong>: Paech, S. J. (2025). *Slop Forensics* (software, MIT). Commit c313f04, 2025-11-01. <a href="https://github.com/sam-paech/slop-forensics" rel="noopener noreferrer">https://github.com/sam-paech/slop-forensics</a></li><li id="src-PAECH-SS"><strong>PAECH-SS</strong>: Paech, S. *slop-score* (software, MIT; the EQ-Bench Slop Score). Commit 289264a, 2025-11-23. <a href="https://github.com/sam-paech/slop-score" rel="noopener noreferrer">https://github.com/sam-paech/slop-score</a></li><li id="src-PANGRAM-9"><strong>PANGRAM-9</strong>: Pangram Labs, &quot;9 Signs of AI Writing, Backed by Data&quot; (undated, © 2026). <a href="https://www.pangram.com/signs-of-ai-writing" rel="noopener noreferrer">https://www.pangram.com/signs-of-ai-writing</a></li><li id="src-PANGRAM-G"><strong>PANGRAM-G</strong>: Emi, B. (Pangram CTO), &quot;Comprehensive Guide to Spotting AI Writing Patterns&quot;, 2025-04-02. <a href="https://www.pangram.com/blog/comprehensive-guide-to-spotting-ai-writing-patterns" rel="noopener noreferrer">https://www.pangram.com/blog/comprehensive-guide-to-spotting-ai-writing-patterns</a></li><li id="src-Przystalski2025"><strong>Przystalski2025</strong>: Przystalski, K., Argasiński, J. K., Grabska-Gradzińska, I., &amp; Ochab, J. K. (2025/2026). Stylometry recognizes human and LLM-generated texts in short samples. *Expert Systems with Applications* 296, 129001. arXiv:2507.00838. [V][V-abs]</li><li id="src-Reinhart2025"><strong>Reinhart2025</strong>: Reinhart, A., Markey, B., Laudenbach, M., Pantusen, K., Yurko, R., Weinberg, G., &amp; Brown, D. W. (2025). Do LLMs write like humans? Variation in grammatical and rhetorical styles. *PNAS* 122(8), e2422455122. <a href="https://doi.org/10.1073/pnas.2422455122" rel="noopener noreferrer">https://doi.org/10.1073/pnas.2422455122</a></li><li id="src-Russell2025experts"><strong>Russell2025experts</strong>: Russell, J., Karpinska, M., &amp; Iyyer, M. (2025). People who frequently use ChatGPT for writing tasks are accurate and robust detectors of AI-generated text. *ACL 2025*. arXiv:2501.15654. [V][V-full]</li><li id="src-ShaibDiversity2025"><strong>ShaibDiversity2025</strong>: Shaib, C., Govindarajan, V. S., Barrow, J., Sun, J., Siu, A. F., Wallace, B. C., &amp; Nenkova, A. (2024/2025). Standardizing the measurement of text diversity: A tool and a comparative analysis of scores. arXiv:2403.00553 (AACL 2025). [V][V-abs]</li><li id="src-ShaibTemplates2024"><strong>ShaibTemplates2024</strong>: Shaib, C., Elazar, Y., Li, J. J., &amp; Wallace, B. C. (2024). Detection and measurement of syntactic templates in generated text. *EMNLP 2024*, 6416–6431. <a href="https://doi.org/10.18653/v1/2024.emnlp-main.368" rel="noopener noreferrer">https://doi.org/10.18653/v1/2024.emnlp-main.368</a></li><li id="src-SLHCK"><strong>SLHCK</strong>: Robitza, W. (slhck), &quot;Claudish&quot;, 2026-06-22. <a href="https://slhck.info/software/2026/06/22/claudish.html" rel="noopener noreferrer">https://slhck.info/software/2026/06/22/claudish.html</a></li><li id="src-Suvanto2026"><strong>Suvanto2026</strong>: Suvanto, M., McGlinchey, A., Wahde, M., &amp; Barclay, P. J. (2026). Interpretable text classification applied to the detection of LLM-generated creative writing. *ICAART 2026*, 1198–1209. arXiv:2601.07368. [V][V-abs]</li><li id="src-WAPO"><strong>WAPO</strong>: Merrill, J. B., Chen, S. Y., Kumer, E., &quot;What are the clues that ChatGPT wrote something? We analyzed its style.&quot; *The Washington Post*, 2025-11-13. <a href="https://www.washingtonpost.com/technology/interactive/2025/how-detect-chatgpt-em-dash/" rel="noopener noreferrer">https://www.washingtonpost.com/technology/interactive/2025/how-detect-chatgpt-em-dash/</a></li><li id="src-WP"><strong>WP</strong>: Wikipedia contributors, &quot;Wikipedia:Signs of AI writing&quot; (WikiProject AI Cleanup; shortcuts WP:AISIGNS, WP:AITELLS, WP:LLMSIGNS). Revision 1384336333, 2026-11-07T20:02:09Z. <a href="https://en.wikipedia.org/w/index.php?title=Wikipedia:Signs_of_AI_writing&amp;oldid=1384336333" rel="noopener noreferrer">https://en.wikipedia.org/w/index.php?title=Wikipedia:Signs_of_AI_writing&amp;oldid=1384336333</a></li><li id="src-WP-S"><strong>WP-S</strong>: &quot;Wikipedia:Signs of AI writing/Style&quot;, rev. 1382924605, 2026-10-31 <a href="https://en.wikipedia.org/w/index.php?title=Wikipedia:Signs_of_AI_writing/Style&amp;oldid=1382924605" rel="noopener noreferrer">https://en.wikipedia.org/w/index.php?title=Wikipedia:Signs_of_AI_writing/Style&amp;oldid=1382924605</a></li></ul>
+<p>Keys not listed here are "expert judgement", "first-hand" (found in our data) or the project spec.</p></section>
+</main>
+</body>
+</html>

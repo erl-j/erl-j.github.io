@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>About the slop detector</title>
+<meta name="description" content="How the slop detector works: the score, its bands, short texts, student essays, the example texts and their licences.">
+<link rel="stylesheet" href="style.css">
+<script defer src="slop-data.js"></script>
+<script defer src="examples.js"></script>
+<script defer src="about.js"></script>
+</head>
+<body>
+<header class="bar doc-bar">
+  <h1><a href="index.html" class="home">Slop detector</a></h1>
+  <nav class="actions" aria-label="Pages">
+    <a class="btn" href="index.html">Back to the detector</a>
+  </nav>
+</header>
+
+<main class="doc-main">
+  <h2 class="doc-title">About the slop detector</h2>
+
+  <p class="notice" role="note"><strong>This measures style, not authorship.</strong> Humans write slop and models can avoid it.
+    Do not use it to make decisions about people (grading, hiring, misconduct).</p>
+
+  <p class="review"><strong>Human review: none.</strong> AI-generated (Claude Code) under the direction of Nicolas Jonason.
+    No person has yet read or checked this code, its results or its documentation.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#what">What it does</a>
+    <a href="#read">Reading the page</a>
+    <a href="#score">About the score</a>
+    <a href="#essays">Student essays</a>
+    <a href="#examples">Example texts</a>
+    <a href="#privacy">Privacy</a>
+    <a href="rules.html">The rule set</a>
+  </nav>
+
+  <section id="what">
+    <h3>What it does</h3>
+    <p>Paste English text to see how many of the stylistic tells common in AI-generated text it shows, and every
+      phrase that moved the score. The score comes from <span id="n-features">87</span> hand-written features
+      (regexes, word lists, counts) weighted by a small logistic regression, fitted on 2026 models and pre-2022
+      human text. <a href="rules.html">The rule set</a> lists every feature with its rationale, source and weight.</p>
+    <p><strong>Where the rules come from.</strong> Of the 87 rules, 34 come from research papers only, 23 from lists and guides written by people only (Wikipedia&rsquo;s guide, editors, tool makers), and 18 from both. The other 12 have no reference: agents found them in the training texts and kept those that held on a second half of the data. Each rule&rsquo;s details show its references, and the notes beside the text name the first one.</p>
+    <p>The page runs a JavaScript port of the Python engine in your browser. The port was checked against Python
+      and gives the same values, contributions, scores and highlights on 224 test texts.</p>
+  </section>
+
+  <section id="read">
+    <h3>Reading the page</h3>
+    <dl class="defs">
+      <dt>Highlights</dt>
+      <dd>Each highlighted word or phrase is a hit of a counting rule. Green
+        (<span class="tag tag-o">dotted underline</span>) points towards human style, red
+        (<span class="tag tag-t">solid underline</span>) towards AI style. Each hit adds
+        weight × 1000 / (training SD × words) to the score, and the stronger the colour, the more it adds. Where hits
+        overlap, the stronger one is drawn. Rules whose hits add less than 0.1 in total are not highlighted unless
+        you ask for them in the verdict details, so rules on common words and punctuation do not paint the whole text.</dd>
+      <dt>Font view</dt>
+      <dd>With Font view on (the default), the letter shapes follow the evidence: loose and irregular letters lean
+        towards human style, square and uniform ones towards AI style. The whole text takes the shape of its
+        P(AI-style) (halfway between the two under 100 words), and highlighted words are pushed further towards their own direction, more and in heavier
+        strokes the stronger they are. It is a display only and does not change the score. The letters come from
+        the project&rsquo;s procedural monospace font generator; the Font view button returns to plain text.</dd>
+      <dt>Notes and lines</dt>
+      <dd>Each rule with highlighted hits in view gets one note in the margin, with a line to each of its hits. The
+        note gives the rule's name, its contribution to the score (positive towards AI style, negative towards
+        human style) and the words it fired on. On narrow screens the notes are a row of chips under the text box.</dd>
+      <dt>Rule details</dt>
+      <dd>Tap a note, a chip or a highlight for the rule: what it looks for and why, its value in this text, its
+        weight and its contribution, the hits it found, its source and the direction observed on the training data.
+        A counting rule's contribution splits into what its hits add and what a text with no hits would get: the
+        average training text has some hits, so having none also counts.</dd>
+      <dt>Verdict</dt>
+      <dd>The tag on top of the box gives the band and P(AI-style). Tap it for the logit, the word and sentence
+        counts, every rule with its contribution (including the statistics of the whole text, which have no
+        highlights), and the sum: the contributions plus the bias add up to the logit.</dd>
+    </dl>
+  </section>
+
+  <section id="score">
+    <h3>About the score</h3>
+    <ul>
+      <li><strong>The score</strong> is a logit: bias + the sum over all rules of weight × (value − training mean) /
+        training SD. P(AI-style) = 1 / (1 + e<sup>−logit</sup>).</li>
+      <li><strong>Bands</strong> come from out-of-fold scores of the training texts: <span id="band-text">“little slop”
+        below 0.26 (80% of human and 1% of AI training texts), “some slop” up to 0.78, “a lot of slop” from 0.78 (80% of
+        AI and 2% of human training texts). The lower threshold is the 80th percentile of the human texts' scores, the
+        upper one the 20th percentile of the AI texts' scores.</span></li>
+      <li><strong>Short texts:</strong> under 100 words the evidence is shown but the score is withheld. The model was
+        trained on texts of 100 to 1,453 words, its accuracy drops at 100 words (dev AUC .92 vs .98 for whole texts),
+        and most features are rates per 1,000 words, which a few words swing hard.</li>
+      <li><strong>What it is not:</strong> no language model and no proof of authorship. Tells change as models
+        change; this rule set was fitted on 2026 models.</li>
+      <li><strong>Accuracy:</strong> dev AUC .977 (whole texts) against .990 for a bag-of-words model on the same
+        data; that gap is the price of readable rules. These numbers and the student-essay rates below are from the
+        engine v1 report and are updated with each engine report.</li>
+    </ul>
+  </section>
+
+  <section id="essays">
+    <h3>Student essays</h3>
+    <p class="warn">It wrongly flags about 1 in 7 student essays: 14% of essays by students not classed as English
+      learners and 5–6% of essays by English learners (PERSUADE and ELLIPSE, grades 6–12, all written by people), at
+      the model's default threshold of P(AI-style) ≥ 0.48. Formal school essays read as AI style to it.</p>
+  </section>
+
+  <section id="examples">
+    <h3>Example texts</h3>
+    <p>The Examples menu has two texts from the training data and two fresh model outputs on the same topic as the
+      human example. The fresh ones are not from the training data, and nobody has checked their facts.</p>
+    <ul class="credits" id="example-credits"><li>The list of examples needs JavaScript.</li></ul>
+  </section>
+
+  <section id="privacy">
+    <h3>Privacy</h3>
+    <p>Everything runs in your browser. The page makes no network requests, and the text you type or paste never
+      leaves the page.</p>
+    <p class="small" id="build-info"></p>
+  </section>
+</main>
+</body>
+</html>

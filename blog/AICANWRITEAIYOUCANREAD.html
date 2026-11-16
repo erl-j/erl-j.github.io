@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI can write AI you can read (draft) — Nicolas Jonason</title>
+  <meta name="description" content="AI agents are quickly getting superhuman abilities in many things, and one of my favorites is their increasing ability to develop AI that is relatively readable.">
+  <link rel="canonical" href="https://erl-j.github.io/blog/AICANWRITEAIYOUCANREAD.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:site_name" content="Nicolas Jonason">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AI can write AI you can read">
+  <meta property="og:description" content="AI agents are quickly getting superhuman abilities in many things, and one of my favorites is their increasing ability to develop AI that is relatively readable.">
+  <meta property="og:url" content="https://erl-j.github.io/blog/AICANWRITEAIYOUCANREAD.html">
+  <meta property="og:image" content="https://erl-j.github.io/og/ai-can-write.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/style.css?v=7">
+  <script src="/cite.js?v=2" defer></script>
+  <script src="/fun-zone/birdmap.js?v=40c3322b" defer></script>
+  <script src="/fun-zone/font.js?v=e7cc9c05" defer></script>
+  <script src="/fun-zone/slop.js?v=7f45d2df" defer></script>
+  <style>
+    /* Draft-only: numbered references. Hover shows the source; click opens it. */
+    .cite.num { text-decoration: none; font-size: 0.75em; vertical-align: super; line-height: 0; margin-left: 1px; }
+    .cite.num .cite-pop { font-size: 1.2em; line-height: 1.4; }
+    .draft-note { font-size: 0.85em; opacity: 0.7; }
+    /* Prompt box: same look as pre.transcript, with the rules folded behind a click. */
+    .prompt { margin: 0 0 1.1rem; padding: 0.75rem 1rem; background: var(--learned-bg); border-left: 2px solid var(--learned-line); font-size: 0.8rem; line-height: 1.5; }
+    .prompt pre { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .prompt summary { cursor: pointer; }
+    .prompt details:not([open]) summary::after { content: " (click to expand)"; opacity: 0.6; }
+    /* Three examples: input -> agent step -> readable output. */
+    .examples .ex { margin: 0 0 1.25rem; font-size: 0.8rem; line-height: 1.45; }
+    .examples .ex-label { margin: 0 0 0.35rem; color: var(--muted); }
+    .examples .ex-row { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem minmax(0, 1fr); gap: 0.6rem; align-items: stretch; }
+    .examples .box { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 0.6rem 0.75rem; border: 1.25px solid; border-radius: 3px; }
+    .examples .in { background: var(--learned-bg); border-color: var(--learned-line); }
+    .examples .out { background: var(--hand-bg); border-color: var(--hand); }
+    .examples .box p { margin: 0; }
+    .examples .cap { display: block; margin-top: 0.3rem; color: var(--muted); }
+    .examples pre { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .examples svg { display: block; width: 100%; max-width: 132px; height: auto; margin: 0 auto; overflow: visible; }
+    .examples .in .cap { text-align: center; }
+    .examples .in.quote .cap { text-align: left; }
+    .examples .axis, .examples .edge { fill: none; stroke: var(--learned-line); stroke-width: 1.25; stroke-linecap: round; }
+    .examples .dot { fill: var(--muted); }
+    .examples .node { fill: var(--learned-bg); stroke: var(--muted); stroke-width: 1.25; }
+    .examples .tick { fill: var(--muted); font-size: 10px; }
+    .examples .step { display: flex; flex-direction: column; justify-content: center; gap: 0.35rem; color: var(--muted); text-align: center; line-height: 1.25; }
+    .examples .arrow { position: relative; display: block; height: 1.5px; background: var(--learned-line); }
+    .examples .arrow::after { content: ""; position: absolute; right: 0; top: 50%; width: 7px; height: 7px; border-top: 1.5px solid var(--learned-line); border-right: 1.5px solid var(--learned-line); transform: translateY(-50%) rotate(45deg); }
+    .examples figcaption { margin-top: 1.25rem; }
+
+    @media (max-width: 30rem) {
+      .examples .ex-row { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
+      .examples .step { flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 0.6rem; padding-left: 1.25rem; text-align: left; }
+      .examples .arrow { flex: none; width: 1.5px; height: 1.6rem; }
+      .examples .arrow::after { right: auto; left: 50%; top: auto; bottom: 0; transform: translateX(-50%) rotate(135deg); }
+    }
+
+    /* Frontier sketch: one svg per domain, three across, stacked on phones. */
+    .frontier { --cur: #1a73e8; --fut: #188038; --fut-bg: #e6f4ea; }
+    @media (prefers-color-scheme: dark) { .frontier { --cur: #8ab4f8; --fut: #81c995; --fut-bg: #1e3326; } }
+    .frontier .panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .frontier .panels svg { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
+    .frontier .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+    .frontier .legend svg { display: inline-block; height: 12px; vertical-align: -1px; margin-right: 6px; }
+    @media (max-width: 30rem) { .frontier .panels { grid-template-columns: minmax(0, 17rem); justify-content: center; gap: 0.75rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="/projects/">Projects</a>
+      <a href="/fun-zone/">Fun zone</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <h1>AI can write AI you can read</h1>
+      <figure>
+        <div id="birdmap"></div>
+        <figcaption><em>A procedural bird generator that an agent wrote for me as readable code. Each bird is a set of 46 numbers and 17 colors. Drag on the map to blend the birds nearby, and open the panel underneath to read the code.</em></figcaption>
+      </figure>
+
+      <p>
+        AI agents are quickly getting superhuman abilities in many things, and one of my favorites is their increasing ability to develop AI that is relatively readable.
+        By readable, I mean that a human can read it and reason about it and, importantly, that what is read is what runs.
+        I use the word readable over interpretable, as interpretation suggests that work needs to be done before we can read it, that multiple interpretations are possible, and that it is uncertain how well our interpretation holds for the system itself.
+        The bird generator above is a small example. A neural network would hide a bird in a vector of unnamed dimensions, whereas here each of the 46 numbers has a name, such as beak length or tail spread, and the code in the panel under the map is the code that draws the birds.
+        The font generator below is another. Every letter is described the way a type designer would describe it, with stems, bowls and arches, and a style is a short list of named numbers, such as pen weight, slant and shake, so the same letter descriptions drawn with different numbers give school handwriting or a typewriter face.
+        The point of this post is to lay out my WIP mental model of how advanced general purpose AI improves our ability to produce readable AI.
+      </p>
+      <figure>
+        <div id="font"></div>
+        <figcaption><em>A font that an agent wrote for me as readable code. Each style is a short list of numbers. Drag on the map to blend the styles nearby, click the text to type your own, and open the panel underneath to read the code.</em></figcaption>
+      </figure>
+      <p>
+        Unreadable AI, such as deep learning, overtook readable AI in domains like computer vision and natural language processing.
+        This is the bitter lesson: general methods that scale with compute, namely search and learning, eventually outperform methods that rely on building in human knowledge.<a class="cite num" href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html">[1]<span class="cite-pop" role="tooltip"><span class="cite-ref">Sutton 2019. The Bitter Lesson.</span><span class="cite-url">incompleteideas.net/IncIdeas/BitterLesson.html</span></span></a>
+        I believe readable AI fell behind because it was bottlenecked by people in two ways, and people do not scale with compute.
+        The first bottleneck was simply coding: we were slow to code what we already knew, since writing a rule or a feature and testing it against data takes time and skill.
+        The second was discovery: in some domains, we are slow to discover the properties of the input that explain the output.
+        If something that scales with compute could do the coding and the discovery for us, readability could scale with compute as well (up to the limit of what humans can read).
+        The sketch below shows this as a frontier, the best performance we know how to reach at each level of human readability. Improved general-purpose AI would push this whole frontier, which we can view either as improving readability at a given level of performance, or as improving performance at a given level of readability. </p>
+      <figure class="frontier">
+        <div class="legend" id="frontier-legend"></div>
+        <div class="panels" id="frontier" role="img" aria-label="Sketch of the frontier of performance against human readability in three kinds of domain: compressible, middle and incompressible. In each, the new frontier lies above and to the right of the old one, and below a dashed true frontier. The gap between old and new is largest in the middle domain."></div>
+        <figcaption><em>A sketch, not data. Each curve is the best performance reachable at each level of human readability. Agents move the old frontier toward the new one, either up (better performance at the same readability) or to the right (more readable at the same performance), but not past the true frontier, the best system possible at each level.</em></figcaption>
+      </figure>
+      <p>
+        LLM-based AI agents, while still not very readable themselves,<a class="cite num" href="https://arxiv.org/abs/2501.16496">[2]<span class="cite-pop" role="tooltip"><span class="cite-ref">Sharkey et al. 2025. Open Problems in Mechanistic Interpretability.</span><span class="cite-url">arxiv.org/abs/2501.16496</span></span></a><a class="cite num" href="https://arxiv.org/abs/2305.04388">[3]<span class="cite-pop" role="tooltip"><span class="cite-ref">Turpin et al. 2023. Language Models Don’t Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting. NeurIPS.</span><span class="cite-url">arxiv.org/abs/2305.04388</span></span></a><a class="cite num" href="https://arxiv.org/abs/2505.05410">[4]<span class="cite-pop" role="tooltip"><span class="cite-ref">Chen et al. 2025. Reasoning Models Don’t Always Say What They Think.</span><span class="cite-url">arxiv.org/abs/2505.05410</span></span></a><a class="cite num" href="https://www.lesswrong.com/posts/PwnadG4BFjaER3MGf/interpretability-will-not-reliably-find-deceptive-ai">[5]<span class="cite-pop" role="tooltip"><span class="cite-ref">Nanda 2025. Interpretability Will Not Reliably Find Deceptive AI. LessWrong.</span><span class="cite-url">lesswrong.com/posts/PwnadG4BFjaER3MGf/interpretability-will-not-reliably-find-deceptive-ai</span></span></a><a class="cite num" href="https://www.lesswrong.com/posts/StENzDcD3kpfGJssR/a-pragmatic-vision-for-interpretability">[6]<span class="cite-pop" role="tooltip"><span class="cite-ref">Nanda et al. 2025. A Pragmatic Vision for Interpretability. LessWrong.</span><span class="cite-url">lesswrong.com/posts/StENzDcD3kpfGJssR/a-pragmatic-vision-for-interpretability</span></span></a> are removing these bottlenecks.
+        Superhuman coding agents are obliterating the coding bottleneck: they can codify second-hand knowledge, turning what the literature already says into rules, features and concept bottlenecks.<a class="cite num" href="https://arxiv.org/abs/2305.03403">[7]<span class="cite-pop" role="tooltip"><span class="cite-ref">Hollmann, Müller and Hutter 2023. Large Language Models for Automated Data Science: Introducing CAAFE for Context-Aware Automated Feature Engineering. NeurIPS.</span><span class="cite-url">arxiv.org/abs/2305.03403</span></span></a><a class="cite num" href="https://arxiv.org/abs/2304.06129">[8]<span class="cite-pop" role="tooltip"><span class="cite-ref">Oikarinen et al. 2023. Label-Free Concept Bottleneck Models. ICLR.</span><span class="cite-url">arxiv.org/abs/2304.06129</span></span></a><a class="cite num" href="https://arxiv.org/abs/2211.11158">[9]<span class="cite-pop" role="tooltip"><span class="cite-ref">Yang et al. 2023. Language in a Bottle: Language Model Guided Concept Bottlenecks for Interpretable Image Classification. CVPR.</span><span class="cite-url">arxiv.org/abs/2211.11158</span></span></a>
+        The discovery bottleneck, which is the more daunting one, is also wavering. Agents are getting better at discovering rules and equations directly in data,<a class="cite num" href="https://doi.org/10.1038/s41586-023-06924-6">[10]<span class="cite-pop" role="tooltip"><span class="cite-ref">Romera-Paredes et al. 2023. Mathematical Discoveries from Program Search with Large Language Models. Nature.</span><span class="cite-url">doi.org/10.1038/s41586-023-06924-6</span></span></a><a class="cite num" href="https://arxiv.org/abs/2404.18400">[11]<span class="cite-pop" role="tooltip"><span class="cite-ref">Shojaee et al. 2024. LLM-SR: Scientific Equation Discovery via Programming with Large Language Models.</span><span class="cite-url">arxiv.org/abs/2404.18400</span></span></a><a class="cite num" href="https://www.lesswrong.com/posts/sCJDstZrpCB8dQveA/using-uninterpretable-llms-to-generate-interpretable-ai-code">[12]<span class="cite-pop" role="tooltip"><span class="cite-ref">Skalse 2023. Using (Uninterpretable) LLMs to Generate Interpretable AI Code. LessWrong.</span><span class="cite-url">lesswrong.com/posts/sCJDstZrpCB8dQveA/using-uninterpretable-llms-to-generate-interpretable-ai-code</span></span></a><a class="cite num" href="https://doi.org/10.1126/science.1165893">[13]<span class="cite-pop" role="tooltip"><span class="cite-ref">Schmidt and Lipson 2009. Distilling Free-Form Natural Laws from Experimental Data. Science.</span><span class="cite-url">doi.org/10.1126/science.1165893</span></span></a><a class="cite num" href="https://arxiv.org/abs/1905.11481">[14]<span class="cite-pop" role="tooltip"><span class="cite-ref">Udrescu and Tegmark 2020. AI Feynman: A Physics-Inspired Method for Symbolic Regression. Science Advances.</span><span class="cite-url">arxiv.org/abs/1905.11481</span></span></a><a class="cite num" href="https://arxiv.org/abs/2305.01582">[15]<span class="cite-pop" role="tooltip"><span class="cite-ref">Cranmer 2023. Interpretable Machine Learning for Science with PySR and SymbolicRegression.jl.</span><span class="cite-url">arxiv.org/abs/2305.01582</span></span></a> which keeps a system readable from the start, as Rudin argues for in high-stakes decisions.<a class="cite num" href="https://arxiv.org/abs/1811.10154">[16]<span class="cite-pop" role="tooltip"><span class="cite-ref">Rudin 2019. Stop Explaining Black Box Machine Learning Models for High Stakes Decisions and Use Interpretable Models Instead. Nature Machine Intelligence.</span><span class="cite-url">arxiv.org/abs/1811.10154</span></span></a>
+        Machine learning <em>training</em> can be seen as discovery too, and agents are getting better at applying mechanistic interpretability to what a network has learned<a class="cite num" href="https://arxiv.org/abs/2404.14394">[17]<span class="cite-pop" role="tooltip"><span class="cite-ref">Shaham et al. 2024. A Multimodal Automated Interpretability Agent.</span><span class="cite-url">arxiv.org/abs/2404.14394</span></span></a><a class="cite num" href="https://arxiv.org/abs/2211.00593">[18]<span class="cite-pop" role="tooltip"><span class="cite-ref">Wang et al. 2022. Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small.</span><span class="cite-url">arxiv.org/abs/2211.00593</span></span></a> and codifying that interpretation as a program that replaces part or all of the network, so that again what we read is what runs.<a class="cite num" href="https://arxiv.org/abs/2006.11287">[19]<span class="cite-pop" role="tooltip"><span class="cite-ref">Cranmer et al. 2020. Discovering Symbolic Models from Deep Learning with Inductive Biases. NeurIPS.</span><span class="cite-url">arxiv.org/abs/2006.11287</span></span></a><a class="cite num" href="https://arxiv.org/abs/2402.05110">[20]<span class="cite-pop" role="tooltip"><span class="cite-ref">Michaud et al. 2024. Opening the AI Black Box: Distilling Machine-Learned Algorithms into Code. Entropy.</span><span class="cite-url">arxiv.org/abs/2402.05110</span></span></a><a class="cite num" href="https://www.lesswrong.com/posts/3kwR2dufdJyJamHQq/mechanistic-transparency-for-machine-learning">[21]<span class="cite-pop" role="tooltip"><span class="cite-ref">Filan 2018. Mechanistic Transparency for Machine Learning. LessWrong.</span><span class="cite-url">lesswrong.com/posts/3kwR2dufdJyJamHQq/mechanistic-transparency-for-machine-learning</span></span></a><a class="cite num" href="https://www.lesswrong.com/posts/X2i9dQQK3gETCyqh2/chris-olah-s-views-on-agi-safety">[22]<span class="cite-pop" role="tooltip"><span class="cite-ref">Hubinger 2019. Chris Olah’s Views on AGI Safety. LessWrong.</span><span class="cite-url">lesswrong.com/posts/X2i9dQQK3gETCyqh2/chris-olah-s-views-on-agi-safety</span></span></a>
+      </p>
+      <p>
+        The slop detector below is an example of both codifying and discovery. Of its 87 rules, 75 are tells that researchers and editors had already written down, which agents found through web search and codified. The other 12 have no reference: agents discovered them in the training texts. Finally,  logistic regression is used to give each feature a weight towards the final prediction.</p>
+      <!-- Three-examples figure, hidden for now.
+      <figure class="examples" aria-label="Three examples of an agent producing readable AI. Second-hand learning: the agent codes a finding from the literature about the phrase 'rather than' as a pattern with a weight. First-hand learning: the agent discovers the equation y = 0.5 * x**2 from data points. Mech interp: the agent turns a small neural network into the three lines of code it implements.">
+        <div class="ex">
+          <p class="ex-label">second-hand learning</p>
+          <div class="ex-row">
+            <div class="box in quote">
+              <p>AI text favours contrastive phrasing like &lsquo;rather than&rsquo;.</p>
+              <span class="cap">the literature</span>
+            </div>
+            <div class="step"><span>agent codes it</span><i class="arrow"></i></div>
+            <div class="box out">
+<pre><code>pattern: \brather than\b
+count:   per 1k words
+weight:  +0.14</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="ex">
+          <p class="ex-label">first-hand learning</p>
+          <div class="ex-row">
+            <div class="box in">
+              <svg viewBox="0 0 120 86" aria-hidden="true">
+                <path class="axis" d="M18,6 V72 H116"/>
+                <text class="tick" x="6" y="12">y</text>
+                <text class="tick" x="110" y="84">x</text>
+                <circle class="dot" cx="26" cy="69.9" r="2.25"/>
+                <circle class="dot" cx="36" cy="71.1" r="2.25"/>
+                <circle class="dot" cx="44" cy="65.3" r="2.25"/>
+                <circle class="dot" cx="54" cy="64.6" r="2.25"/>
+                <circle class="dot" cx="64" cy="54.9" r="2.25"/>
+                <circle class="dot" cx="72" cy="49.9" r="2.25"/>
+                <circle class="dot" cx="82" cy="45.8" r="2.25"/>
+                <circle class="dot" cx="90" cy="33.8" r="2.25"/>
+                <circle class="dot" cx="100" cy="26.6" r="2.25"/>
+                <circle class="dot" cx="108" cy="13.9" r="2.25"/>
+              </svg>
+              <span class="cap">data</span>
+            </div>
+            <div class="step"><span>agent discovers</span><i class="arrow"></i></div>
+            <div class="box out">
+<pre><code>y = 0.5 * x**2</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="ex">
+          <p class="ex-label">mech interp</p>
+          <div class="ex-row">
+            <div class="box in">
+              <svg viewBox="0 0 120 77" aria-hidden="true">
+                <path class="edge" d="M14,26 L46,10 M14,26 L46,29 M14,26 L46,48 M14,26 L46,67"/>
+                <path class="edge" d="M14,50 L46,10 M14,50 L46,29 M14,50 L46,48 M14,50 L46,67"/>
+                <path class="edge" d="M46,10 L78,10 M46,10 L78,29 M46,10 L78,48 M46,10 L78,67"/>
+                <path class="edge" d="M46,29 L78,10 M46,29 L78,29 M46,29 L78,48 M46,29 L78,67"/>
+                <path class="edge" d="M46,48 L78,10 M46,48 L78,29 M46,48 L78,48 M46,48 L78,67"/>
+                <path class="edge" d="M46,67 L78,10 M46,67 L78,29 M46,67 L78,48 M46,67 L78,67"/>
+                <path class="edge" d="M78,10 L108,38"/>
+                <path class="edge" d="M78,29 L108,38"/>
+                <path class="edge" d="M78,48 L108,38"/>
+                <path class="edge" d="M78,67 L108,38"/>
+                <circle class="node" cx="14" cy="26" r="5"/>
+                <circle class="node" cx="14" cy="50" r="5"/>
+                <circle class="node" cx="46" cy="10" r="5"/>
+                <circle class="node" cx="46" cy="29" r="5"/>
+                <circle class="node" cx="46" cy="48" r="5"/>
+                <circle class="node" cx="46" cy="67" r="5"/>
+                <circle class="node" cx="78" cy="10" r="5"/>
+                <circle class="node" cx="78" cy="29" r="5"/>
+                <circle class="node" cx="78" cy="48" r="5"/>
+                <circle class="node" cx="78" cy="67" r="5"/>
+                <circle class="node" cx="108" cy="38" r="5"/>
+              </svg>
+              <span class="cap">unreadable AI</span>
+            </div>
+            <div class="step"><span>agent applies mech interp</span><i class="arrow"></i></div>
+            <div class="box out">
+<pre><code>def f(a, b):
+    return (a + b) % 10</code></pre>
+            </div>
+          </div>
+        </div>
+        <figcaption><em>Three examples of an agent producing readable AI. The first rule and its weight come from the slop detector below; the other two are illustrations.</em></figcaption>
+      </figure>
+      -->
+      <figure>
+        <div id="slop"></div>
+        <figcaption><em>A slop detector that an agent wrote for me as readable rules: 87 patterns and counts, each with a weight. Paste your own text over the sample to see which phrases push the score toward AI style (red) or human style (green); it measures style, not who wrote the text.</em></figcaption>
+      </figure>
+      <p>Some important caveats before I wrap it up. Readability is of course subjective, and to be readable, the code, the rules, concepts, features, symbols etc.. have to be small enough for a person to review: a million stacked rules might be even less readable than a end-to-end deep learning system it replaces. For deep learning systems, we can at least intuit some things from its objective, data, and architecture. Also, being able to read a system is not sufficient condition for understanding it. Also, readable is not necessarily safe. </p>
+      <p>
+        The practical takeaway for AI practitioners today is inviting you to experiment with asking an agent for a readable solution to a problem where unreadable AI dominates, and measure how much performance you actually give up compared to a black-box solution.
+        My current way of working is to spend my attention on setting up reasonable evals and let the agents cook on solutions, only occasionally nudging them towards strategies I think could be worth exploring.<a class="cite num" href="https://arxiv.org/abs/2305.03403">[7]<span class="cite-pop" role="tooltip"><span class="cite-ref">Hollmann, Müller and Hutter 2023. Large Language Models for Automated Data Science: Introducing CAAFE for Context-Aware Automated Feature Engineering. NeurIPS.</span><span class="cite-url">arxiv.org/abs/2305.03403</span></span></a>
+      </p>
+
+      <h2>Prompt of the week</h2>
+      <p>
+        Copy this into a coding agent and fill in the brackets.
+      </p>
+      <div class="transcript prompt">
+<pre>&gt; task: [describe the task and if there are data]
+&gt; goal: solve it with AI a person can read</pre>
+        <details>
+          <summary>&gt; rules:</summary>
+<pre>&gt; readable = a human can easily understand it and its component parts
+&gt; reading budget: [5 hours of study]
+&gt; strategy: your choice
+&gt; example paths to try:
+&gt;   search the literature and codify what it says
+&gt;   find existing neural networks (or any other ml model) or train your own and apply mech interp
+&gt;   induction loop: inspect examples, induce some rules, measure the residual error, repeat.
+&gt; mind the splits: never leak test data
+&gt; score on held-out data
+&gt; bonus: compare it to a black-box baseline
+&gt; report: the system, its score, the gap to the baseline if there is one, what was tried</pre>
+        </details>
+      </div>
+
+
+      <h2>References</h2>
+      <ol>
+        <li>Sutton 2019. The Bitter Lesson. <a href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html">incompleteideas.net/IncIdeas/BitterLesson.html</a></li>
+        <li>Sharkey et al. 2025. Open Problems in Mechanistic Interpretability. <a href="https://arxiv.org/abs/2501.16496">arxiv.org/abs/2501.16496</a></li>
+        <li>Turpin et al. 2023. Language Models Don’t Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting. NeurIPS. <a href="https://arxiv.org/abs/2305.04388">arxiv.org/abs/2305.04388</a></li>
+        <li>Chen et al. 2025. Reasoning Models Don’t Always Say What They Think. <a href="https://arxiv.org/abs/2505.05410">arxiv.org/abs/2505.05410</a></li>
+        <li>Nanda 2025. Interpretability Will Not Reliably Find Deceptive AI. LessWrong. <a href="https://www.lesswrong.com/posts/PwnadG4BFjaER3MGf/interpretability-will-not-reliably-find-deceptive-ai">lesswrong.com/posts/PwnadG4BFjaER3MGf/interpretability-will-not-reliably-find-deceptive-ai</a></li>
+        <li>Nanda et al. 2025. A Pragmatic Vision for Interpretability. LessWrong. <a href="https://www.lesswrong.com/posts/StENzDcD3kpfGJssR/a-pragmatic-vision-for-interpretability">lesswrong.com/posts/StENzDcD3kpfGJssR/a-pragmatic-vision-for-interpretability</a></li>
+        <li>Hollmann, Müller and Hutter 2023. Large Language Models for Automated Data Science: Introducing CAAFE for Context-Aware Automated Feature Engineering. NeurIPS. <a href="https://arxiv.org/abs/2305.03403">arxiv.org/abs/2305.03403</a></li>
+        <li>Oikarinen et al. 2023. Label-Free Concept Bottleneck Models. ICLR. <a href="https://arxiv.org/abs/2304.06129">arxiv.org/abs/2304.06129</a></li>
+        <li>Yang et al. 2023. Language in a Bottle: Language Model Guided Concept Bottlenecks for Interpretable Image Classification. CVPR. <a href="https://arxiv.org/abs/2211.11158">arxiv.org/abs/2211.11158</a></li>
+        <li>Romera-Paredes et al. 2023. Mathematical Discoveries from Program Search with Large Language Models. Nature. <a href="https://doi.org/10.1038/s41586-023-06924-6">doi.org/10.1038/s41586-023-06924-6</a></li>
+        <li>Shojaee et al. 2024. LLM-SR: Scientific Equation Discovery via Programming with Large Language Models. <a href="https://arxiv.org/abs/2404.18400">arxiv.org/abs/2404.18400</a></li>
+        <li>Skalse 2023. Using (Uninterpretable) LLMs to Generate Interpretable AI Code. LessWrong. <a href="https://www.lesswrong.com/posts/sCJDstZrpCB8dQveA/using-uninterpretable-llms-to-generate-interpretable-ai-code">lesswrong.com/posts/sCJDstZrpCB8dQveA/using-uninterpretable-llms-to-generate-interpretable-ai-code</a></li>
+        <li>Schmidt and Lipson 2009. Distilling Free-Form Natural Laws from Experimental Data. Science. <a href="https://doi.org/10.1126/science.1165893">doi.org/10.1126/science.1165893</a></li>
+        <li>Udrescu and Tegmark 2020. AI Feynman: A Physics-Inspired Method for Symbolic Regression. Science Advances. <a href="https://arxiv.org/abs/1905.11481">arxiv.org/abs/1905.11481</a></li>
+        <li>Cranmer 2023. Interpretable Machine Learning for Science with PySR and SymbolicRegression.jl. <a href="https://arxiv.org/abs/2305.01582">arxiv.org/abs/2305.01582</a></li>
+        <li>Rudin 2019. Stop Explaining Black Box Machine Learning Models for High Stakes Decisions and Use Interpretable Models Instead. Nature Machine Intelligence. <a href="https://arxiv.org/abs/1811.10154">arxiv.org/abs/1811.10154</a></li>
+        <li>Shaham et al. 2024. A Multimodal Automated Interpretability Agent. <a href="https://arxiv.org/abs/2404.14394">arxiv.org/abs/2404.14394</a></li>
+        <li>Wang et al. 2022. Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small. <a href="https://arxiv.org/abs/2211.00593">arxiv.org/abs/2211.00593</a></li>
+        <li>Cranmer et al. 2020. Discovering Symbolic Models from Deep Learning with Inductive Biases. NeurIPS. <a href="https://arxiv.org/abs/2006.11287">arxiv.org/abs/2006.11287</a></li>
+        <li>Michaud et al. 2024. Opening the AI Black Box: Distilling Machine-Learned Algorithms into Code. Entropy. <a href="https://arxiv.org/abs/2402.05110">arxiv.org/abs/2402.05110</a></li>
+        <li>Filan 2018. Mechanistic Transparency for Machine Learning. LessWrong. <a href="https://www.lesswrong.com/posts/3kwR2dufdJyJamHQq/mechanistic-transparency-for-machine-learning">lesswrong.com/posts/3kwR2dufdJyJamHQq/mechanistic-transparency-for-machine-learning</a></li>
+        <li>Hubinger 2019. Chris Olah’s Views on AGI Safety. LessWrong. <a href="https://www.lesswrong.com/posts/X2i9dQQK3gETCyqh2/chris-olah-s-views-on-agi-safety">lesswrong.com/posts/X2i9dQQK3gETCyqh2/chris-olah-s-views-on-agi-safety</a></li>
+        <li>Trask et al. 2018. Neural Arithmetic Logic Units. NeurIPS. <a href="https://arxiv.org/abs/1808.00508">arxiv.org/abs/1808.00508</a></li>
+        <li>Gao et al. 2023. PAL: Program-aided Language Models. ICML. <a href="https://arxiv.org/abs/2211.10435">arxiv.org/abs/2211.10435</a></li>
+      </ol>
+    </article>
+  </main>
+  <script>
+  (function () {
+    // Sketch of the readability-performance frontier in three kinds of domain. Shapes only, no data.
+    var host = document.getElementById('frontier'), NS = 'http://www.w3.org/2000/svg';
+    var W = 320, H = 340, P = { l: 40, r: 22, t: 64, b: 44 };
+    var pw = W - P.l - P.r, ph = H - P.t - P.b;
+    var U = 0.36, D = 0.74;   // what people can understand, what people can discover (x = readability)
+    var domains = [
+      { name: 'Compressible', eg: 'e.g. laws of physics', mid: 1.0, k: 0.06, at: 0.86 },
+      { name: 'Middle', eg: 'e.g. diagnosis from records', mid: 0.55, at: 0.42 },
+      { name: 'Incompressible', eg: 'e.g. object recognition', mid: 0.12, at: 0.1 }];
+    function path(pts) { return 'M' + pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join('L'); }
+
+    domains.forEach(function (d, i) {
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      svg.setAttribute('aria-hidden', 'true');
+      host.appendChild(svg);
+      function el(tag, a, txt) { var e = document.createElementNS(NS, tag);
+        for (var k in a) e.setAttribute(k, a[k]); if (txt) e.textContent = txt; svg.appendChild(e); return e; }
+      function txt(x, y, t, size, color, weight) {
+        return el('text', { x: x, y: y, 'text-anchor': 'middle', style: 'fill:' + color + ';font-size:' + size + 'px;font-weight:' + (weight || 400) }, t); }
+      el('defs', {}).innerHTML =
+        '<marker id="frontierArrow' + i + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">' +
+        '<path d="M1,1 L9,5 L1,9" fill="none" style="stroke:var(--fut)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>';
+
+      function X(x) { return P.l + x * pw; }
+      function Y(y) { return P.t + (1 - y) * ph; }
+      // Old frontier p; new frontier q is a little better everywhere: a bit higher, and the drop starts a bit more to the right.
+      function p(x) { return 0.06 + 0.82 / (1 + Math.exp((x - d.mid) / (d.k || 0.08))); }
+      function q(x) { return 0.06 + 0.90 / (1 + Math.exp((x - d.mid - 0.08) / (d.k || 0.08))); }
+      // True frontier: the best system possible at each readability. Above both; agents move toward it, not past it.
+      function tr(x) { return 0.06 + 0.93 / (1 + Math.exp((x - d.mid - 0.17) / (d.k || 0.08))); }
+      function curve(g) { var a = []; for (var k = 0; k <= 80; k++) { var x = k / 80; a.push([X(x), Y(g(x))]); } return a; }
+
+      txt(X(0.5), 20, d.name, 19, 'var(--text)', 600);
+      txt(X(0.5), 42, d.eg, 16, 'var(--muted)');
+
+      // Old frontier: deep learning on the opaque side; on the readable side, capped by what people found by hand.
+      // Hybrids (e.g. concept bottlenecks) smooth the switch, so it is a steep slope, not a step.
+      function softmin(a, b) { var t = 0.025; return -t * Math.log(Math.exp(-a / t) + Math.exp(-b / t)); }
+      function pre_(x) { var w = 1 / (1 + Math.exp((x - U) / 0.05)); return w * p(x) + (1 - w) * softmin(p(x), p(D)); }
+      var pre = curve(pre_);
+      el('path', { d: path(curve(q).concat(pre.slice().reverse())) + 'Z', style: 'fill:var(--fut-bg);stroke:none' });
+
+      el('path', { d: path([[X(0), Y(1.02)], [X(0), Y(0)], [X(1), Y(0)]]), style: 'stroke:var(--muted);fill:none', 'stroke-width': 1 });
+      txt(X(0.5), Y(0) + 28, 'human readability →', 16, 'var(--muted)');
+      var yl = Y(0.5), xl = X(0) - 14;
+      el('text', { x: xl, y: yl, transform: 'rotate(-90 ' + xl + ' ' + yl + ')', 'text-anchor': 'middle', style: 'fill:var(--muted);font-size:16px' }, 'performance →');
+
+      el('path', { d: path(curve(tr)), style: 'stroke:var(--muted);fill:none', 'stroke-width': 1.5, 'stroke-dasharray': '5 5' });
+      el('path', { d: path(curve(q)), style: 'stroke:var(--fut);fill:none', 'stroke-width': 2.25, 'stroke-linejoin': 'round' });
+      el('path', { d: path(pre), style: 'stroke:var(--cur);fill:none', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+
+      // Two arrows from one point on the old frontier to the new one:
+      // up = same readability, better performance; right = same performance, more readable.
+      var x0 = d.at, y0 = pre_(x0), x1 = x0;
+      while (x1 < 1 && q(x1) > y0) x1 += 0.002;
+      function arrow(xa, ya, xb, yb) {
+        el('path', { d: 'M' + xa + ',' + ya + ' L' + xb + ',' + yb, style: 'stroke:var(--fut);fill:none', 'stroke-width': 1.75, 'marker-end': 'url(#frontierArrow' + i + ')' }); }
+      arrow(X(x0), Y(y0) - 6, X(x0), Y(q(x0)) + 4);
+      arrow(X(x0) + 6, Y(y0), X(x1) - 4, Y(y0));
+      el('circle', { cx: X(x0), cy: Y(y0), r: 4, style: 'fill:var(--cur);stroke:var(--bg);stroke-width:2' });
+    });
+
+    function sw(style) { return '<svg viewBox="0 0 22 12" style="width:22px"><line x1="0" x2="22" y1="6" y2="6" style="' + style + '"/></svg>'; }
+    var arr = '<path d="M1,6 L19,6 M14,2 L19,6 L14,10" style="fill:none;stroke:var(--fut);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"/>';
+    document.getElementById('frontier-legend').innerHTML =
+      '<span>' + sw('stroke:var(--cur);stroke-width:2') + 'old frontier</span>' +
+      '<span>' + sw('stroke:var(--fut);stroke-width:2') + 'new frontier</span>' +
+      '<span>' + sw('stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4') + 'true frontier</span>' +
+      '<span><svg viewBox="0 0 20 12" style="width:12px;transform:rotate(-90deg)">' + arr + '</svg>better performance</span>' +
+      '<span><svg viewBox="0 0 20 12" style="width:20px">' + arr + '</svg>more readable</span>';
+  })();
+  </script>
+</body>
+</html>

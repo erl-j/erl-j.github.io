@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Slop detector</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="style.css">
+<script defer src="slop-data.js"></script>
+<script defer src="examples.js"></script>
+<script defer src="engine.js"></script>
+<script defer src="fontgen.js"></script>
+<script defer src="fontview.js"></script>
+<script defer src="app.js"></script>
+
+<div class="app" id="app">
+  <header class="bar">
+    <h1><span class="lw">English slop detector</span><span class="ln">Slop detector</span></h1>
+    <nav class="actions" aria-label="Examples and help">
+      <div class="exmenu" id="exmenu">
+        <button type="button" class="btn" id="ex-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="ex-list">Examples<span class="caret" aria-hidden="true"></span></button>
+        <ul class="ex-list" id="ex-list" role="listbox" tabindex="-1" aria-label="Example texts" hidden></ul>
+      </div>
+      <button type="button" class="btn" id="font-btn" aria-pressed="false" title="Letter shapes follow the evidence: loose and irregular = human style, square and uniform = AI style">Font view</button>
+      <a class="btn" id="about-btn" href="about.html">About</a>
+    </nav>
+  </header>
+
+  <p class="notice" role="note"><strong>This measures style, not authorship.</strong> Humans write slop and models can avoid it. Do not use it to make decisions about people (grading, hiring, misconduct).</p>
+
+  <main class="stage" id="stage">
+    <div class="notes notes-left" id="notes-left" role="group" aria-label="Rules that fired on the visible text (left margin)"><div class="notes-scroll"><div class="notes-inner"></div></div></div>
+
+    <section class="box" id="box" aria-label="Text and verdict">
+      <div class="vbar">
+      <button type="button" class="verdict no-score" id="verdict" aria-haspopup="dialog" aria-live="polite">
+        <span class="v-label" id="v-label">Loading…</span>
+        <span class="v-meter" aria-hidden="true"><span class="v-tick" id="v-tick1"></span><span class="v-tick" id="v-tick2"></span><span class="v-mark" id="v-mark"></span></span>
+        <span class="v-prob" id="v-prob"></span>
+        <span class="v-words" id="v-words"></span>
+        <span class="v-more" aria-hidden="true">details</span>
+      </button>
+      <button type="button" class="clear" id="clear" aria-label="Clear the text" title="Clear the text">×</button>
+      </div>
+      <p class="prov" id="prov" hidden></p>
+      <div class="editor" id="editor">
+        <div class="ed-grid" id="ed-grid">
+          <div class="bd-inner" id="bd-inner" aria-hidden="true"></div>
+          <svg class="glyphs" id="glyphs" aria-hidden="true"></svg>
+          <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="sentences"
+                    aria-label="English text to check" placeholder="Type or paste English text here (100 words or more for a score). It is analysed as you type and never leaves this page."></textarea>
+          <svg class="inlay" id="inlay" aria-hidden="true"></svg>
+        </div>
+      </div>
+    </section>
+
+    <div class="notes notes-right" id="notes-right" role="group" aria-label="Rules that fired on the visible text"><div class="notes-scroll"><div class="notes-inner"></div></div></div>
+    <div class="chips" id="chips" role="group" aria-label="Rules that fired on the visible text" data-empty="Rules whose hits are in view appear here."></div>
+
+    <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+  </main>
+
+  <footer class="foot">
+    <span class="legend" aria-label="Colour scale: green towards human style, red towards AI style; stronger colour means stronger evidence. Dotted underline: human style, solid: AI style. In font view, loose irregular letters lean human style, square uniform letters AI style.">
+      <span class="lg-end" data-spec="hand"><span class="lg-txt">human style</span></span><span class="sw fill o" style="--k:1"></span><span class="sw fill o" style="--k:.55"></span><span class="sw fill o" style="--k:.15"></span><span class="lg-gap"></span><span class="sw fill t" style="--k:.15"></span><span class="sw fill t" style="--k:.55"></span><span class="sw fill t" style="--k:1"></span><span class="lg-end" data-spec="machine"><span class="lg-txt">AI style</span></span>
+    </span>
+    <span class="review"><strong>Human review: none.</strong> AI-generated (Claude Code) under the direction of Nicolas Jonason.</span>
+  </footer>
+</div>
+
+<div class="pop" id="pop" role="dialog" aria-modal="false" aria-labelledby="pop-title" hidden>
+  <button type="button" class="pop-close" id="pop-close" aria-label="Close">×</button>
+  <div id="pop-body"></div>
+</div>
+
+<noscript><p class="noscript">This page needs JavaScript; it runs entirely in your browser.</p></noscript>
+
+</body></html>
